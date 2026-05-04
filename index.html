@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Check Rut Pro - V2.0.6</title>
+    <title>Check Rut Pro - V2.0.8</title>
     <style>
         :root {
             --primary-green: #1b4314;
@@ -11,28 +11,26 @@
             --bg-dark: #121212;
             --card-bg: #1e1e1e;
             --accent-blue: #448aff;
-            --report-red: #ef5350;
-            --report-green: #66bb6a;
             --text-gray: #aaa;
             --modal-bg: #2c2c2c;
         }
 
-        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg-dark); color: white; overflow-x: hidden; }
+        body { margin: 0; font-family: sans-serif; background-color: var(--bg-dark); color: white; }
         
         .nav-tabs { display: flex; background-color: var(--tabs-blue); position: sticky; top: 0; z-index: 100; overflow-x: auto; }
-        .tab { flex: 1; min-width: 75px; padding: 15px 0; text-align: center; font-size: 0.65rem; font-weight: bold; color: rgba(255,255,255,0.6); cursor: pointer; text-transform: uppercase; border-bottom: 4px solid transparent; white-space: nowrap; transition: 0.2s; }
+        .tab { flex: 1; min-width: 75px; padding: 15px 0; text-align: center; font-size: 0.65rem; font-weight: bold; color: rgba(255,255,255,0.6); cursor: pointer; text-transform: uppercase; border-bottom: 4px solid transparent; white-space: nowrap; }
         .tab.active { color: white; border-bottom: 4px solid #fff; background: rgba(255,255,255,0.1); }
 
-        .section { display: none; padding: 15px; min-height: 80vh; padding-bottom: 100px; }
+        .section { display: none; padding: 15px; min-height: 80vh; }
         .section.active { display: block; }
 
-        .notepad-container { background: #000; border-radius: 12px; padding: 15px; border: 1px solid #333; min-height: 250px; margin-top: 10px; white-space: pre-wrap; font-family: monospace; color: #00ff00; font-size: 0.95rem; }
+        .notepad-container { background: #000; border-radius: 12px; padding: 15px; border: 1px solid #333; min-height: 250px; margin-top: 10px; white-space: pre-wrap; font-family: monospace; color: #00ff00; font-size: 1rem; }
         .btn-edit-note { background: #333; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 0.8rem; margin-bottom: 10px; width: 100%; font-weight: bold; }
 
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
         .modal-content { background: var(--modal-bg); padding: 25px; border-radius: 20px; width: 100%; max-width: 400px; }
         .btn-action { background: var(--accent-blue); border: none; color: white; padding: 16px; border-radius: 10px; font-weight: bold; width: 100%; margin-top: 15px; }
-        textarea { width: 100%; background: #2a2a2a; border: 1px solid #444; color: white; padding: 14px; border-radius: 10px; margin-bottom: 10px; font-size: 1rem; box-sizing: border-box; }
+        textarea { width: 100%; background: #2a2a2a; border: 1px solid #444; color: white; padding: 14px; border-radius: 10px; font-size: 1rem; box-sizing: border-box; }
     </style>
 </head>
 <body>
@@ -47,23 +45,28 @@
 
     <div id="base" class="section active">
         <button class="btn-edit-note" onclick="checkPinForEdit()">🔒 EDITAR SALIDAS (CON PIN)</button>
-        <div id="noteDisplay" class="notepad-container">Cargando servidor...</div>
+        <div id="noteDisplay" class="notepad-container">Conectando...</div>
     </div>
+
+    <div id="llamar" class="section"><h3>Contactos</h3></div>
+    <div id="rutas" class="section"><h3>Rutas</h3></div>
+    <div id="horarios" class="section"><h3>Tiempos</h3></div>
+    <div id="reportes" class="section"><h3>Diario</h3></div>
 
     <div class="modal-overlay" id="editNoteModal">
         <div class="modal-content">
             <h3>Actualizar Frecuencia</h3>
-            <textarea id="noteInput" rows="12" placeholder="Escribe aquí..."></textarea>
+            <textarea id="noteInput" rows="12"></textarea>
             <button class="btn-action" onclick="saveToMyServer()">PUBLICAR CAMBIOS</button>
             <button onclick="closeModal('editNoteModal')" style="background:none; border:none; color:#aaa; width:100%; margin-top:10px;">CANCELAR</button>
         </div>
     </div>
 
     <script>
-        // CONFIGURACIÓN REVISADA (Minúsculas corregidas según captura)
+        // CONFIGURACIÓN EXTRAÍDA DE TUS CAPTURAS
         const PIN_SEGURIDAD = "1234";
         const GIST_ID = "befb4b7fbbbd04b9406f0b0b3fe6bbfe";
-        const TOKEN_ADMIN = "ghp_9pBMwzu9Cx240wf2BFDbyV38smD04R1s15Ta"; 
+        const TOKEN_ADMIN = "ghp_9pBwWzu9Cxz40wf2BFDbyV38SmD04R1s15Ta"; 
 
         window.onload = () => { loadFromMyServer(); };
 
@@ -76,49 +79,34 @@
                 const contenido = data.files[fileName].content;
                 display.innerText = contenido || "Lista vacía.";
                 document.getElementById('noteInput').value = contenido || "";
-            } catch (e) { display.innerText = "Error al conectar."; }
+            } catch (e) { display.innerText = "Error de red."; }
         }
 
         async function saveToMyServer() {
             const text = document.getElementById('noteInput').value;
-            const display = document.getElementById('noteDisplay');
-            display.innerText = "Sincronizando...";
             closeModal('editNoteModal');
-
             try {
                 const res = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
                     method: 'PATCH',
-                    headers: { 
-                        "Authorization": `Bearer ${TOKEN_ADMIN}`,
-                        "Content-Type": "application/json" 
-                    },
-                    body: JSON.stringify({ 
-                        files: { "salidas.txt": { content: text } } 
-                    })
+                    headers: { "Authorization": `token ${TOKEN_ADMIN}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({ files: { "salidas.txt": { content: text } } })
                 });
-
-                if(res.ok) {
-                    alert("¡Éxito! Lista actualizada.");
-                    loadFromMyServer();
-                } else {
-                    const err = await res.json();
-                    alert("GitHub dice: " + err.message);
-                    loadFromMyServer();
-                }
-            } catch (e) { alert("Error de red."); loadFromMyServer(); }
+                if(res.ok) { alert("¡Actualizado!"); loadFromMyServer(); }
+                else { const err = await res.json(); alert("GitHub dice: " + err.message); loadFromMyServer(); }
+            } catch (e) { alert("Error al guardar."); loadFromMyServer(); }
         }
 
         function checkPinForEdit() {
-            // Sistema de sesión de 3 horas
             const lastLogin = localStorage.getItem('last_pin_login');
             const now = Date.now();
             if (lastLogin && (now - lastLogin < 10800000)) { 
                 openModal('editNoteModal'); 
             } else {
-                if(prompt("Introduce el PIN:") === PIN_SEGURIDAD) {
+                const userPin = prompt("Introduce el PIN:");
+                if(userPin === PIN_SEGURIDAD) {
                     localStorage.setItem('last_pin_login', now);
                     openModal('editNoteModal');
-                } else { alert("PIN incorrecto."); }
+                } else if (userPin !== null) { alert("PIN incorrecto."); }
             }
         }
 
