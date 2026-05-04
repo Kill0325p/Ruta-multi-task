@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Check Rut Pro - V1.9</title>
+    <style>
+        :root {
+            --primary-green: #1b4314;
+            --tabs-blue: #1976d2;
+            --bg-dark: #121212;
+            --card-bg: #1e1e1e;
+            --accent-blue: #448aff;
+            --report-red: #ef5350;
+            --report-green: #66bb6a;
+            --text-gray: #aaa;
+            --modal-bg: #2c2c2c;
+        }
+
+        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg-dark); color: white; overflow-x: hidden; }
+        
+        /* Navegación */
+        .nav-tabs { display: flex; background-color: var(--tabs-blue); position: sticky; top: 0; z-index: 100; overflow-x: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+        .tab { flex: 1; min-width: 75px; padding: 15px 0; text-align: center; font-size: 0.65rem; font-weight: bold; color: rgba(255,255,255,0.6); cursor: pointer; text-transform: uppercase; border-bottom: 4px solid transparent; white-space: nowrap; transition: 0.2s; }
+        .tab.active { color: white; border-bottom: 4px solid #fff; background: rgba(255,255,255,0.1); }
+
+        .section { display: none; padding: 15px; min-height: 80vh; padding-bottom: 100px; animation: fadeIn 0.3s; }
+        .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Bloc de Notas (BASE) */
+        .notepad-container { background: #000; border-radius: 12px; padding: 15px; border: 1px solid #333; min-height: 250px; margin-top: 10px; white-space: pre-wrap; font-family: monospace; color: #00ff00; font-size: 0.95rem; line-height: 1.4; }
+        .btn-edit-note { background: #333; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 0.8rem; margin-bottom: 10px; width: 100%; font-weight: bold; border: 1px solid #444; }
+
+        /* Cronómetros */
+        .timer-card { background: var(--card-bg); margin-bottom: 15px; padding: 20px; border-radius: 15px; border: 3px solid #333; display: flex; flex-direction: column; position: relative; cursor: pointer; }
+        .timer-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .timer-route { font-size: 1.6rem; font-weight: bold; margin: 0; }
+        .timer-elapsed { font-size: 1.2rem; color: var(--accent-blue); font-weight: 600; margin-top: 4px; }
+        .unit-indicator-area { position: relative; align-self: flex-start; margin-top: 5px; }
+        .unit-tag { padding: 6px 15px; border-radius: 6px; font-weight: 800; font-size: 0.8rem; text-transform: uppercase; color: white; min-width: 70px; text-align: center; }
+        .tag-combi { background: var(--accent-blue); }
+        .tag-camion { background: var(--report-red); }
+        .unit-badge { position: absolute; top: -10px; right: -10px; background: #5cacee; color: white; padding: 3px 7px; border-radius: 10px; font-size: 0.7rem; font-weight: 900; border: 2px solid var(--card-bg); }
+
+        /* Reportes (DIARIO) */
+        .report-card { background: #1a1a1a; border-radius: 12px; padding: 15px; margin-bottom: 12px; border-left: 4px solid #333; }
+        .report-time { font-size: 1.3rem; font-weight: bold; margin-bottom: 10px; color: #fff; }
+        .report-main-row { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+        .report-type-box { background: var(--accent-blue); color: white; padding: 6px 15px; border-radius: 6px; font-weight: bold; font-size: 0.9rem; position: relative; min-width: 80px; text-align: center; }
+        .report-type-box.camion { background: var(--report-red); }
+        .report-unit-circle { position: absolute; top: -12px; right: -15px; background: #5cacee; color: white; padding: 2px 6px; border-radius: 10px; font-size: 0.7rem; font-weight: 900; border: 2px solid #1a1a1a; }
+        .report-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; border-top: 1px solid #333; padding-top: 12px; }
+        .stat-box { background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; border: 1px solid #222; }
+        .stat-label { font-size: 0.7rem; color: #888; font-weight: bold; display: block; margin-bottom: 4px; text-transform: uppercase; }
+        .stat-value { font-size: 0.95rem; color: #eee; font-weight: 600; }
+
+        /* General */
+        .list-selector-container { background: #1a1a1a; padding: 12px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #333; }
+        .fab { position: fixed; bottom: 25px; right: 25px; width: 60px; height: 60px; background: var(--accent-blue); border-radius: 50%; border: none; color: white; font-size: 35px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); z-index: 200; }
+        .btn-action { background: var(--accent-blue); border: none; color: white; padding: 16px; border-radius: 10px; font-weight: bold; width: 100%; margin-top: 15px; font-size: 1rem; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); align-items: center; justify-content: center; z-index: 1000; padding: 20px; box-sizing: border-box; }
+        .modal-content { background: var(--modal-bg); padding: 25px; border-radius: 20px; width: 100%; max-width: 400px; }
+        select, input, textarea { width: 100%; background: #2a2a2a; border: 1px solid #444; color: white; padding: 14px; border-radius: 10px; box-sizing: border-box; margin-bottom: 10px; font-size: 1rem; }
+    </style>
+</head>
+<body>
+
+    <nav class="nav-tabs">
+        <div class="tab active" id="tab-llamar" onclick="switchTab('llamar')">📞 CONTACTOS</div>
+        <div class="tab" id="tab-base" onclick="switchTab('base')">📋 SALIDAS</div>
+        <div class="tab" id="tab-rutas" onclick="switchTab('rutas')">🗺️ RUTAS</div>
+        <div class="tab" id="tab-horarios" onclick="switchTab('horarios')">🕒 TIEMPOS</div>
+        <div class="tab" id="tab-reportes" onclick="switchTab('reportes')">📊 DIARIO</div>
+    </nav>
+
+    <!-- Sección CONTACTOS -->
+    <div id="llamar" class="section active">
+        <div style="text-align:center; margin-top:50px;">
+            <button onclick="window.location.href='tel:'" style="background:var(--report-green); color:white; border:none; width:100px; height:100px; border-radius:50%; font-size:2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">📞</button>
+            <h2 style="margin-top:20px;">Llamar</h2>
+            <button onclick="exportarDatos()" style="background:none; border:none; color:#444; font-size:0.7rem; margin-top:100px;">JSON DATA BACKUP</button>
+        </div>
+    </div>
+
+    <!-- Sección SALIDAS (Base con PIN) -->
+    <div id="base" class="section">
+        <button class="btn-edit-note" onclick="checkPinForEdit()">🔒 EDITAR LISTA (REQUIERE PIN)</button>
+        <div id="noteDisplay" class="notepad-container">Cargando lista de la base...</div>
+    </div>
+
+    <!-- Sección RUTAS -->
+    <div id="rutas" class="section">
+        <div id="routeList"></div>
+        <button class="fab" onclick="openModal('routeModal')">+</button>
+    </div>
+
+    <!-- Sección TIEMPOS -->
+    <div id="horarios" class="section">
+        <div id="timerContainer"></div>
+    </div>
+
+    <!-- Sección DIARIO -->
+    <div id="reportes" class="section">
+        <div class="list-selector-container">
+            <input type="date" id="filterDate" onchange="renderReport()">
+            <select id="filterRouteReport" onchange="renderReport()"></select>
+        </div>
+        <div id="historyList"></div>
+    </div>
+
+    <!-- MODAL EDITAR LISTA -->
+    <div class="modal-overlay" id="editNoteModal">
+        <div class="modal-content">
+            <h3>Editar Lista Base</h3>
+            <textarea id="noteInput" rows="12" placeholder="Escribe aquí el orden de salida..."></textarea>
+            <button class="btn-action" onclick="saveGlobalNote()">GUARDAR CAMBIOS</button>
+            <button onclick="closeModal('editNoteModal')" style="background:none; border:none; color:#aaa; width:100%; margin-top:10px;">CANCELAR</button>
+        </div>
+    </div>
+
+    <!-- OTROS MODALES -->
+    <div class="modal-overlay" id="routeModal"><div class="modal-content"><h3>Nueva Ruta</h3><input type="text" id="routeName" placeholder="Nombre"><input type="number" id="routeAlarm" value="15"><button class="btn-action" onclick="processRoute()">CREAR</button><button onclick="closeModal('routeModal')" style="background:none; border:none; color:#aaa; width:100%; margin-top:10px;">CERRAR</button></div></div>
+    <div class="modal-overlay" id="passModal"><div class="modal-content"><h3 id="targetRouteLabel"></h3><select id="unitType"><option value="Combi">🚐 Combi</option><option value="Camión">🚌 Camión</option></select><input type="number" id="unitNumber" placeholder="Número de Unidad" inputmode="numeric"><button class="btn-action" onclick="savePass()" style="background:var(--report-green);">REGISTRAR PASO</button><button onclick="closeModal('passModal')" style="background:none; border:none; color:#aaa; width:100%; margin-top:10px;">CANCELAR</button></div></div>
+
+    <script>
+        const PIN_SEGURIDAD = "1234"; // PIN por defecto
+        const BIN_ID = "66367503ad19ca34f863e41c"; 
+        const MASTER_KEY = "$2a$10$X87S1v1N1K.H7z3O6I6I6e6I6I6I6I6I6I6I6I6I6I6I6I6";
+
+        let routes = [];
+        let allPasses = [];
+        let selectedRouteId = null;
+
+        window.onload = () => {
+            const savedRoutes = localStorage.getItem('rutas');
+            const savedPasses = localStorage.getItem('pases');
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('filterDate').value = today;
+
+            if(savedRoutes) routes = JSON.parse(savedRoutes).map(r => ({...r, startTime: new Date(r.startTime)}));
+            if(savedPasses) allPasses = JSON.parse(savedPasses);
+
+            renderRouteList();
+            routes.forEach(renderTimerCard);
+            loadGlobalNote();
+        };
+
+        function persist() { localStorage.setItem('rutas', JSON.stringify(routes)); localStorage.setItem('pases', JSON.stringify(allPasses)); }
+
+        // Lógica Bloc de Notas Global
+        async function loadGlobalNote() {
+            try {
+                const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, { headers: { "X-Master-Key": MASTER_KEY } });
+                const data = await res.json();
+                const text = data.record.text || "Lista de base vacía";
+                document.getElementById('noteDisplay').innerText = text;
+                document.getElementById('noteInput').value = text;
+            } catch (e) { document.getElementById('noteDisplay').innerText = "Sin conexión a la nube."; }
+        }
+
+        function checkPinForEdit() {
+            if(prompt("Ingresa el PIN de la base:") === PIN_SEGURIDAD) openModal('editNoteModal');
+            else alert("PIN incorrecto.");
+        }
+
+        async function saveGlobalNote() {
+            const newText = document.getElementById('noteInput').value;
+            document.getElementById('noteDisplay').innerText = "Sincronizando...";
+            closeModal('editNoteModal');
+            try {
+                await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+                    method: 'PUT',
+                    headers: { "Content-Type": "application/json", "X-Master-Key": MASTER_KEY },
+                    body: JSON.stringify({ text: newText })
+                });
+                loadGlobalNote();
+            } catch (e) { alert("Error al guardar."); loadGlobalNote(); }
+        }
+
+        // Cronómetros
+        function renderTimerCard(route) {
+            const container = document.getElementById('timerContainer');
+            if(document.getElementById(`card-${route.id}`)) return;
+            const html = `<div class="timer-card" id="card-${route.id}" onclick="openPassModal(${route.id})"><div class="timer-header"><div><div class="timer-route">${route.name}</div><div class="timer-elapsed" id="elapsed-${route.id}">Hace ...</div></div><div class="unit-indicator-area" id="indicator-${route.id}" style="display:${route.lastType?'block':'none'}"><div class="unit-tag ${route.lastType==='Camión'?'tag-camion':'tag-combi'}" id="tag-${route.id}">${route.lastType}</div><div class="unit-badge" id="badge-${route.id}">${route.lastNum}</div></div></div></div>`;
+            container.insertAdjacentHTML('beforeend', html);
+            setInterval(() => {
+                const r = routes.find(x => x.id === route.id);
+                const diff = new Date() - new Date(r.startTime);
+                const m = Math.floor(diff/60000); const s = Math.floor((diff%60000)/1000);
+                document.getElementById(`elapsed-${r.id}`).innerText = `Hace ${m}m ${s}s`;
+            }, 1000);
+        }
+
+        function savePass() {
+            const num = document.getElementById('unitNumber').value;
+            const type = document.getElementById('unitType').value;
+            if(!num) return;
+            const route = routes.find(r => r.id === selectedRouteId);
+            const now = Date.now();
+            allPasses.push({ routeId: route.id, type, number: num, time: now });
+            route.startTime = new Date(now); route.lastType = type; route.lastNum = num;
+            document.getElementById(`tag-${route.id}`).innerText = type;
+            document.getElementById(`tag-${route.id}`).className = `unit-tag ${type==='Camión'?'tag-camion':'tag-combi'}`;
+            document.getElementById(`badge-${route.id}`).innerText = num;
+            document.getElementById(`indicator-${route.id}`).style.display = 'block';
+            persist(); closeModal('passModal'); document.getElementById('unitNumber').value = '';
+        }
+
+        // Reportes con Minutos y Segundos
+        function renderReport() {
+            const rId = document.getElementById('filterRouteReport').value;
+            const date = document.getElementById('filterDate').value;
+            if(!rId) return;
+
+            const filtered = allPasses
+                .filter(p => p.routeId == rId && new Date(p.time).toISOString().split('T')[0] === date)
+                .sort((a,b) => b.time - a.time);
+
+            let html = '';
+            filtered.forEach((p, i) => {
+                const timeStr = new Date(p.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit', hour12:false});
+                
+                // Resta de tiempo con el anterior (Minutos y Segundos)
+                let diffText = "-";
+                const nextP = filtered[i + 1];
+                if(nextP) {
+                    const diffMs = p.time - nextP.time;
+                    const mm = Math.floor(diffMs / 60000);
+                    const ss = Math.floor((diffMs % 60000) / 1000);
+                    diffText = `${mm}m ${ss}s`;
+                }
+
+                html += `
+                <div class="report-card">
+                    <div class="report-time">${timeStr}</div>
+                    <div class="report-main-row">
+                        <div class="report-type-box ${p.type === 'Camión' ? 'camion' : ''}">
+                            ${p.type.toUpperCase()}
+                            <div class="report-unit-circle">${p.number}</div>
+                        </div>
+                    </div>
+                    <div class="report-stats-grid">
+                        <div class="stat-box">
+                            <span class="stat-label">${p.type} anterior:</span>
+                            <span class="stat-value">${diffText}</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-label">Transporte anterior:</span>
+                            <span class="stat-value">${diffText}</span>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            document.getElementById('historyList').innerHTML = html || '<p style="text-align:center; padding:20px;">Sin registros hoy.</p>';
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            document.getElementById('tab-' + tabId).classList.add('active');
+            if(tabId === 'reportes') {
+                document.getElementById('filterRouteReport').innerHTML = routes.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+                renderReport();
+            }
+            if(tabId === 'base') loadGlobalNote();
+        }
+
+        function processRoute() {
+            const name = document.getElementById('routeName').value.trim();
+            if(!name) return;
+            const r = { id: Date.now(), name, startTime: new Date(), alarmMs: 900000, lastType: '', lastNum: '' };
+            routes.push(r); renderRouteList(); renderTimerCard(r); persist(); closeModal('routeModal');
+        }
+
+        function renderRouteList() {
+            document.getElementById('routeList').innerHTML = routes.map(r => `<div style="background:var(--card-bg); padding:15px; border-radius:12px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;"><span><strong>${r.name}</strong></span><button style="color:var(--report-red); background:none; border:1px solid var(--report-red); padding:5px 10px; border-radius:5px;" onclick="confirmDelete(${r.id})">BORRAR</button></div>`).join('');
+        }
+        function openModal(id) { document.getElementById(id).style.display='flex'; }
+        function closeModal(id) { document.getElementById(id).style.display='none'; }
+        function openPassModal(id) { selectedRouteId = id; document.getElementById('targetRouteLabel').innerText = routes.find(r => r.id === id).name; openModal('passModal'); }
+        function confirmDelete(id) { if(confirm("¿Eliminar ruta?")) { routes = routes.filter(r => r.id !== id); persist(); location.reload(); } }
+        function exportarDatos() { alert(JSON.stringify({routes, allPasses})); }
+    </script>
+</body>
+</html>
