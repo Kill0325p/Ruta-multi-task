@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Check Rut Pro - V1.9.5</title>
+    <title>Check Rut Pro - V1.9.6</title>
     <style>
         :root {
             --primary-green: #1b4314;
@@ -67,19 +67,12 @@
     </div>
 
     <div id="base" class="section">
-        <button class="btn-edit-note" onclick="checkPinForEdit()">🔒 EDITAR LISTA</button>
-        <div id="noteDisplay" class="notepad-container">Cargando base...</div>
+        <button class="btn-edit-note" onclick="checkPinForEdit()">🔒 EDITAR LISTA (SESIÓN 3H)</button>
+        <div id="noteDisplay" class="notepad-container">Conectando...</div>
     </div>
 
-    <div id="rutas" class="section">
-        <div id="routeList"></div>
-        <button class="fab" onclick="openModal('routeModal')">+</button>
-    </div>
-
-    <div id="horarios" class="section">
-        <div id="timerContainer"></div>
-    </div>
-
+    <div id="rutas" class="section"><div id="routeList"></div><button class="fab" onclick="openModal('routeModal')">+</button></div>
+    <div id="horarios" class="section"><div id="timerContainer"></div></div>
     <div id="reportes" class="section">
         <div style="background:#1a1a1a; padding:10px; border-radius:10px; margin-bottom:15px;">
             <input type="date" id="filterDate" onchange="renderReport()">
@@ -91,8 +84,8 @@
     <div class="modal-overlay" id="editNoteModal">
         <div class="modal-content">
             <h3>Editar Lista Base</h3>
-            <textarea id="noteInput" rows="10"></textarea>
-            <button class="btn-action" onclick="saveGlobalNote()">ACTUALIZAR NUBE</button>
+            <textarea id="noteInput" rows="10" placeholder="Escribe aquí las salidas..."></textarea>
+            <button class="btn-action" onclick="saveGlobalNote()">GUARDAR EN NUBE</button>
             <button onclick="closeModal('editNoteModal')" style="background:none; border:none; color:#aaa; width:100%; margin-top:10px;">CERRAR</button>
         </div>
     </div>
@@ -105,24 +98,16 @@
         const KEY = "$2a$10$X87S1v1N1K.H7z3O6I6I6e6I6I6I6I6I6I6I6I6I6I6I6I6";
         const BID = "66367503ad19ca34f863e41c";
 
-        let routes = [];
-        let allPasses = [];
-        let selectedRouteId = null;
+        let routes = []; let allPasses = []; let selectedRouteId = null;
 
         window.onload = () => {
             const savedRoutes = localStorage.getItem('rutas');
             const savedPasses = localStorage.getItem('pases');
             document.getElementById('filterDate').value = new Date().toISOString().split('T')[0];
-
             if(savedRoutes) routes = JSON.parse(savedRoutes).map(r => ({...r, startTime: new Date(r.startTime)}));
             if(savedPasses) allPasses = JSON.parse(savedPasses);
-
-            renderRouteList();
-            routes.forEach(renderTimerCard);
-            loadGlobalNote();
+            renderRouteList(); routes.forEach(renderTimerCard); loadGlobalNote();
         };
-
-        function persist() { localStorage.setItem('rutas', JSON.stringify(routes)); localStorage.setItem('pases', JSON.stringify(allPasses)); }
 
         async function loadGlobalNote() {
             const display = document.getElementById('noteDisplay');
@@ -133,49 +118,34 @@
                 const data = await res.json();
                 display.innerText = data.text || "Lista de base vacía.";
                 document.getElementById('noteInput').value = data.text || "";
-            } catch (e) {
-                display.innerText = "Error de conexión.";
-            }
+            } catch (e) { display.innerText = "Error al leer la nube."; }
         }
 
         function checkPinForEdit() {
             const lastLogin = localStorage.getItem('last_pin_login');
             const now = Date.now();
-            const tresHoras = 3 * 60 * 60 * 1000;
-
-            if (lastLogin && (now - lastLogin < tresHoras)) {
-                openModal('editNoteModal');
-            } else {
-                if(prompt("PIN de acceso (Válido por 3h):") === PIN_SEGURIDAD) {
+            if (lastLogin && (now - lastLogin < 10800000)) { openModal('editNoteModal'); }
+            else {
+                if(prompt("PIN (Acceso por 3h):") === PIN_SEGURIDAD) {
                     localStorage.setItem('last_pin_login', now);
                     openModal('editNoteModal');
-                } else {
-                    alert("PIN incorrecto.");
-                }
+                } else { alert("PIN incorrecto."); }
             }
         }
 
         async function saveGlobalNote() {
             const txt = document.getElementById('noteInput').value;
-            const display = document.getElementById('noteDisplay');
             closeModal('editNoteModal');
-            display.innerText = "Sincronizando...";
-
+            document.getElementById('noteDisplay').innerText = "Sincronizando...";
             try {
                 const res = await fetch(`https://api.jsonbin.io/v3/b/${BID}`, {
                     method: 'PUT',
                     headers: { "Content-Type": "application/json", "X-Master-Key": KEY },
                     body: JSON.stringify({ text: txt })
                 });
-                if(res.ok) {
-                    alert("¡Sincronizado!");
-                    loadGlobalNote();
-                } else {
-                    display.innerText = "Fallo al guardar.";
-                }
-            } catch (e) {
-                display.innerText = "Sin conexión.";
-            }
+                if(res.ok) { alert("¡Guardado!"); loadGlobalNote(); }
+                else { alert("El servidor rechazó el guardado."); loadGlobalNote(); }
+            } catch (e) { alert("Sin conexión."); loadGlobalNote(); }
         }
 
         function renderTimerCard(route) {
@@ -191,6 +161,7 @@
             }, 1000);
         }
 
+        function persist() { localStorage.setItem('rutas', JSON.stringify(routes)); localStorage.setItem('pases', JSON.stringify(allPasses)); }
         function savePass() {
             const num = document.getElementById('unitNumber').value;
             const type = document.getElementById('unitType').value;
@@ -214,7 +185,7 @@
                     const diff = p.time - filtered[i+1].time;
                     diffText = `${Math.floor(diff/60000)}m ${Math.floor((diff%60000)/1000)}s`;
                 }
-                html += `<div class="report-card"><strong>${new Date(p.time).toLocaleTimeString()}</strong> - ${p.type} ${p.number}<div class="report-stats-grid"><div class="stat-box"><span class="stat-label">Diferencia:</span><span class="stat-value">${diffText}</span></div></div></div>`;
+                html += `<div class="report-card"><strong>${new Date(p.time).toLocaleTimeString()}</strong> - ${p.type} ${p.number}<div class="report-stats-grid"><div class="stat-box"><span class="stat-label">Dif:</span><span class="stat-value">${diffText}</span></div></div></div>`;
             });
             document.getElementById('historyList').innerHTML = html || 'Sin registros.';
         }
@@ -238,9 +209,7 @@
             persist(); location.reload();
         }
 
-        function renderRouteList() {
-            document.getElementById('routeList').innerHTML = routes.map(r => `<div style="background:#1e1e1e; padding:15px; margin-bottom:10px; border-radius:10px; display:flex; justify-content:space-between;">${r.name} <button onclick="confirmDelete(${r.id})">Borrar</button></div>`).join('');
-        }
+        function renderRouteList() { document.getElementById('routeList').innerHTML = routes.map(r => `<div style="background:#1e1e1e; padding:15px; margin-bottom:10px; border-radius:10px; display:flex; justify-content:space-between;">${r.name} <button onclick="confirmDelete(${r.id})">Borrar</button></div>`).join(''); }
         function openModal(id) { document.getElementById(id).style.display='flex'; }
         function closeModal(id) { document.getElementById(id).style.display='none'; }
         function openPassModal(id) { selectedRouteId = id; document.getElementById('targetRouteLabel').innerText = routes.find(r => r.id === id).name; openModal('passModal'); }
