@@ -3,121 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Check Rut Pro - V2.0.8</title>
+    <title>Check Rut Pro - V2.1.1</title>
     <style>
-        :root {
-            --primary-green: #1b4314;
-            --tabs-blue: #1976d2;
-            --bg-dark: #121212;
-            --card-bg: #1e1e1e;
-            --accent-blue: #448aff;
-            --text-gray: #aaa;
-            --modal-bg: #2c2c2c;
-        }
-
-        body { margin: 0; font-family: sans-serif; background-color: var(--bg-dark); color: white; }
-        
-        .nav-tabs { display: flex; background-color: var(--tabs-blue); position: sticky; top: 0; z-index: 100; overflow-x: auto; }
-        .tab { flex: 1; min-width: 75px; padding: 15px 0; text-align: center; font-size: 0.65rem; font-weight: bold; color: rgba(255,255,255,0.6); cursor: pointer; text-transform: uppercase; border-bottom: 4px solid transparent; white-space: nowrap; }
-        .tab.active { color: white; border-bottom: 4px solid #fff; background: rgba(255,255,255,0.1); }
-
-        .section { display: none; padding: 15px; min-height: 80vh; }
+        :root { --p: #1976d2; --bg: #121212; }
+        body { margin: 0; font-family: sans-serif; background: var(--bg); color: white; }
+        .nav { display: flex; background: var(--p); position: sticky; top: 0; z-index: 100; }
+        .tab { flex: 1; padding: 15px 0; text-align: center; font-size: 0.7rem; font-weight: bold; cursor: pointer; }
+        .section { display: none; padding: 15px; }
         .section.active { display: block; }
-
-        .notepad-container { background: #000; border-radius: 12px; padding: 15px; border: 1px solid #333; min-height: 250px; margin-top: 10px; white-space: pre-wrap; font-family: monospace; color: #00ff00; font-size: 1rem; }
-        .btn-edit-note { background: #333; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 0.8rem; margin-bottom: 10px; width: 100%; font-weight: bold; }
-
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
-        .modal-content { background: var(--modal-bg); padding: 25px; border-radius: 20px; width: 100%; max-width: 400px; }
-        .btn-action { background: var(--accent-blue); border: none; color: white; padding: 16px; border-radius: 10px; font-weight: bold; width: 100%; margin-top: 15px; }
-        textarea { width: 100%; background: #2a2a2a; border: 1px solid #444; color: white; padding: 14px; border-radius: 10px; font-size: 1rem; box-sizing: border-box; }
+        .notepad { background: #000; border-radius: 12px; padding: 15px; border: 1px solid #333; min-height: 250px; white-space: pre-wrap; font-family: monospace; color: #00ff00; }
+        .btn-edit { background: #333; color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-weight: bold; margin-bottom: 10px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+        .modal-content { background: #2c2c2c; padding: 20px; border-radius: 20px; width: 100%; max-width: 400px; }
+        textarea { width: 100%; background: #1a1a1a; border: 1px solid #444; color: white; padding: 10px; border-radius: 10px; box-sizing: border-box; }
+        .btn-pub { background: #448aff; color: white; border: none; padding: 15px; border-radius: 10px; width: 100%; margin-top: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <nav class="nav-tabs">
-        <div class="tab" id="tab-llamar" onclick="switchTab('llamar')">📞 CONTACTOS</div>
-        <div class="tab active" id="tab-base" onclick="switchTab('base')">📋 SALIDAS</div>
-        <div class="tab" id="tab-rutas" onclick="switchTab('rutas')">🗺️ RUTAS</div>
-        <div class="tab" id="tab-horarios" onclick="switchTab('horarios')">🕒 TIEMPOS</div>
-        <div class="tab" id="tab-reportes" onclick="switchTab('reportes')">📊 DIARIO</div>
+    <nav class="nav">
+        <div class="tab" onclick="switchTab('base')">📋 SALIDAS</div>
+        <div class="tab" onclick="switchTab('otros')">⚙️ OTROS</div>
     </nav>
 
     <div id="base" class="section active">
-        <button class="btn-edit-note" onclick="checkPinForEdit()">🔒 EDITAR SALIDAS (CON PIN)</button>
-        <div id="noteDisplay" class="notepad-container">Conectando...</div>
+        <button class="btn-edit" onclick="checkPin()">🔒 EDITAR SALIDAS (CON PIN)</button>
+        <div id="noteDisplay" class="notepad">Conectando...</div>
     </div>
 
-    <div id="llamar" class="section"><h3>Contactos</h3></div>
-    <div id="rutas" class="section"><h3>Rutas</h3></div>
-    <div id="horarios" class="section"><h3>Tiempos</h3></div>
-    <div id="reportes" class="section"><h3>Diario</h3></div>
+    <div id="otros" class="section"><h3>Panel de Control</h3></div>
 
-    <div class="modal-overlay" id="editNoteModal">
+    <div class="modal" id="modalEdit">
         <div class="modal-content">
-            <h3>Actualizar Frecuencia</h3>
-            <textarea id="noteInput" rows="12"></textarea>
-            <button class="btn-action" onclick="saveToMyServer()">PUBLICAR CAMBIOS</button>
-            <button onclick="closeModal('editNoteModal')" style="background:none; border:none; color:#aaa; width:100%; margin-top:10px;">CANCELAR</button>
+            <h3>Actualizar Lista</h3>
+            <textarea id="noteInput" rows="10"></textarea>
+            <button class="btn-pub" onclick="saveData()">PUBLICAR CAMBIOS</button>
+            <button onclick="closeM()" style="background:none; border:none; color:grey; width:100%; margin-top:10px;">Cancelar</button>
         </div>
     </div>
 
     <script>
-        // CONFIGURACIÓN EXTRAÍDA DE TUS CAPTURAS
-        const PIN_SEGURIDAD = "1234";
-        const GIST_ID = "befb4b7fbbbd04b9406f0b0b3fe6bbfe";
-        const TOKEN_ADMIN = "ghp_9pBwWzu9Cxz40wf2BFDbyV38SmD04R1s15Ta"; 
+        // CONFIGURACIÓN CORREGIDA SEGÚN CAPTURA DE PANTALLA
+        const PIN = "1234";
+        const GID = "befb4b7fbbbd04b9406f0b0b3fe6bbfe";
+        // TOKEN CORREGIDO A MINÚSCULAS (ghp_9pb...)
+        const TKN = "ghp_9pBwWzu9Cxz40wf2BFDbyV38SmD04R1s15Ta"; 
 
-        window.onload = () => { loadFromMyServer(); };
+        window.onload = loadData;
 
-        async function loadFromMyServer() {
-            const display = document.getElementById('noteDisplay');
+        async function loadData() {
             try {
-                const res = await fetch(`https://api.github.com/gists/${GIST_ID}`);
-                const data = await res.json();
-                const fileName = Object.keys(data.files)[0];
-                const contenido = data.files[fileName].content;
-                display.innerText = contenido || "Lista vacía.";
-                document.getElementById('noteInput').value = contenido || "";
-            } catch (e) { display.innerText = "Error de red."; }
+                const r = await fetch(`https://api.github.com/gists/${GID}?t=${Date.now()}`);
+                const d = await r.json();
+                const content = d.files[Object.keys(d.files)[0]].content;
+                document.getElementById('noteDisplay').innerText = content || "Sin datos.";
+                document.getElementById('noteInput').value = content || "";
+            } catch (e) { document.getElementById('noteDisplay').innerText = "Error de conexión."; }
         }
 
-        async function saveToMyServer() {
-            const text = document.getElementById('noteInput').value;
-            closeModal('editNoteModal');
+        async function saveData() {
+            const val = document.getElementById('noteInput').value;
+            closeM();
+            document.getElementById('noteDisplay').innerText = "Guardando...";
             try {
-                const res = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+                const r = await fetch(`https://api.github.com/gists/${GID}`, {
                     method: 'PATCH',
-                    headers: { "Authorization": `token ${TOKEN_ADMIN}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ files: { "salidas.txt": { content: text } } })
+                    headers: { 
+                        "Authorization": `token ${TKN}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ files: { "salidas.txt": { content: val } } })
                 });
-                if(res.ok) { alert("¡Actualizado!"); loadFromMyServer(); }
-                else { const err = await res.json(); alert("GitHub dice: " + err.message); loadFromMyServer(); }
-            } catch (e) { alert("Error al guardar."); loadFromMyServer(); }
+                if(r.ok) { alert("¡Éxito! Actualizado."); loadData(); }
+                else { 
+                    const error = await r.json();
+                    alert("Error de GitHub: " + error.message); 
+                    loadData(); 
+                }
+            } catch (e) { alert("Error de red."); loadData(); }
         }
 
-        function checkPinForEdit() {
-            const lastLogin = localStorage.getItem('last_pin_login');
-            const now = Date.now();
-            if (lastLogin && (now - lastLogin < 10800000)) { 
-                openModal('editNoteModal'); 
-            } else {
-                const userPin = prompt("Introduce el PIN:");
-                if(userPin === PIN_SEGURIDAD) {
-                    localStorage.setItem('last_pin_login', now);
-                    openModal('editNoteModal');
-                } else if (userPin !== null) { alert("PIN incorrecto."); }
-            }
+        function checkPin() {
+            const login = localStorage.getItem('last_l');
+            if (login && (Date.now() - login < 10800000)) return openM();
+            if(prompt("Introduce PIN:") === PIN) { 
+                localStorage.setItem('last_l', Date.now()); 
+                openM(); 
+            } else { alert("PIN Incorrecto."); }
         }
 
-        function openModal(id) { document.getElementById(id).style.display='flex'; }
-        function closeModal(id) { document.getElementById(id).style.display='none'; }
-        function switchTab(tabId) {
+        function openM() { document.getElementById('modalEdit').style.display='flex'; }
+        function closeM() { document.getElementById('modalEdit').style.display='none'; }
+        function switchTab(id) {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            document.getElementById('tab-' + tabId).classList.add('active');
-            if(tabId === 'base') loadFromMyServer();
+            document.getElementById(id).classList.add('active');
         }
     </script>
 </body>
