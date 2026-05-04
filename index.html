@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Check Rut Pro - V1.9.6</title>
+    <title>Check Rut Pro - V1.9.7</title>
     <style>
         :root {
             --primary-green: #1b4314;
@@ -68,7 +68,7 @@
 
     <div id="base" class="section">
         <button class="btn-edit-note" onclick="checkPinForEdit()">🔒 EDITAR LISTA (SESIÓN 3H)</button>
-        <div id="noteDisplay" class="notepad-container">Conectando...</div>
+        <div id="noteDisplay" class="notepad-container">Iniciando conexión con la nube...</div>
     </div>
 
     <div id="rutas" class="section"><div id="routeList"></div><button class="fab" onclick="openModal('routeModal')">+</button></div>
@@ -84,9 +84,9 @@
     <div class="modal-overlay" id="editNoteModal">
         <div class="modal-content">
             <h3>Editar Lista Base</h3>
-            <textarea id="noteInput" rows="10" placeholder="Escribe aquí las salidas..."></textarea>
-            <button class="btn-action" onclick="saveGlobalNote()">GUARDAR EN NUBE</button>
-            <button onclick="closeModal('editNoteModal')" style="background:none; border:none; color:#aaa; width:100%; margin-top:10px;">CERRAR</button>
+            <textarea id="noteInput" rows="10" placeholder="Escribe las salidas aquí..."></textarea>
+            <button class="btn-action" onclick="saveGlobalNote()">GUARDAR CAMBIOS</button>
+            <button onclick="closeModal('editNoteModal')" style="background:none; border:none; color:#aaa; width:100%; margin-top:10px;">CANCELAR</button>
         </div>
     </div>
 
@@ -95,8 +95,8 @@
 
     <script>
         const PIN_SEGURIDAD = "1234";
-        const KEY = "$2a$10$X87S1v1N1K.H7z3O6I6I6e6I6I6I6I6I6I6I6I6I6I6I6I6";
-        const BID = "66367503ad19ca34f863e41c";
+        const KEY = "$2a$10$U9Hk9iQvR.u9pD9C4q.yOebW8D09E0D9C4q.yOebW8D09E0D9C4q.";
+        const BID = "6636a04aad19ca34f86419ce"; // Nueva Nube Limpia
 
         let routes = []; let allPasses = []; let selectedRouteId = null;
 
@@ -116,9 +116,10 @@
                     headers: { "X-Master-Key": KEY, "X-Bin-Meta": "false" }
                 });
                 const data = await res.json();
-                display.innerText = data.text || "Lista de base vacía.";
-                document.getElementById('noteInput').value = data.text || "";
-            } catch (e) { display.innerText = "Error al leer la nube."; }
+                const textoFinal = data.text || "Lista de base vacía.";
+                display.innerText = textoFinal;
+                document.getElementById('noteInput').value = textoFinal === "Lista de base vacía." ? "" : textoFinal;
+            } catch (e) { display.innerText = "Sin conexión a la nube."; }
         }
 
         function checkPinForEdit() {
@@ -126,7 +127,7 @@
             const now = Date.now();
             if (lastLogin && (now - lastLogin < 10800000)) { openModal('editNoteModal'); }
             else {
-                if(prompt("PIN (Acceso por 3h):") === PIN_SEGURIDAD) {
+                if(prompt("PIN de Seguridad (Acceso por 3h):") === PIN_SEGURIDAD) {
                     localStorage.setItem('last_pin_login', now);
                     openModal('editNoteModal');
                 } else { alert("PIN incorrecto."); }
@@ -136,16 +137,16 @@
         async function saveGlobalNote() {
             const txt = document.getElementById('noteInput').value;
             closeModal('editNoteModal');
-            document.getElementById('noteDisplay').innerText = "Sincronizando...";
+            document.getElementById('noteDisplay').innerText = "Sincronizando cambios...";
             try {
                 const res = await fetch(`https://api.jsonbin.io/v3/b/${BID}`, {
                     method: 'PUT',
                     headers: { "Content-Type": "application/json", "X-Master-Key": KEY },
                     body: JSON.stringify({ text: txt })
                 });
-                if(res.ok) { alert("¡Guardado!"); loadGlobalNote(); }
-                else { alert("El servidor rechazó el guardado."); loadGlobalNote(); }
-            } catch (e) { alert("Sin conexión."); loadGlobalNote(); }
+                if(res.ok) { alert("¡Sincronizado con éxito!"); loadGlobalNote(); }
+                else { alert("Error del servidor. Intenta de nuevo."); loadGlobalNote(); }
+            } catch (e) { alert("Error de red."); loadGlobalNote(); }
         }
 
         function renderTimerCard(route) {
