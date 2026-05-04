@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Check Rut Pro - V1.9.7</title>
+    <title>Check Rut Pro - V1.9.9</title>
     <style>
         :root {
             --primary-green: #1b4314;
@@ -67,8 +67,8 @@
     </div>
 
     <div id="base" class="section">
-        <button class="btn-edit-note" onclick="checkPinForEdit()">🔒 EDITAR LISTA (SESIÓN 3H)</button>
-        <div id="noteDisplay" class="notepad-container">Iniciando conexión con la nube...</div>
+        <button class="btn-edit-note" onclick="checkPinForEdit()">🔒 EDITAR LISTA (GLOBAL)</button>
+        <div id="noteDisplay" class="notepad-container">Conectando con la nueva nube...</div>
     </div>
 
     <div id="rutas" class="section"><div id="routeList"></div><button class="fab" onclick="openModal('routeModal')">+</button></div>
@@ -84,9 +84,9 @@
     <div class="modal-overlay" id="editNoteModal">
         <div class="modal-content">
             <h3>Editar Lista Base</h3>
-            <textarea id="noteInput" rows="10" placeholder="Escribe las salidas aquí..."></textarea>
-            <button class="btn-action" onclick="saveGlobalNote()">GUARDAR CAMBIOS</button>
-            <button onclick="closeModal('editNoteModal')" style="background:none; border:none; color:#aaa; width:100%; margin-top:10px;">CANCELAR</button>
+            <textarea id="noteInput" rows="10" placeholder="Escribe aquí las salidas compartidas..."></textarea>
+            <button class="btn-action" onclick="saveGlobalNote()">PUBLICAR PARA TODOS</button>
+            <button onclick="closeModal('editNoteModal')" style="background:none; border:none; color:#aaa; width:100%; margin-top:10px;">CERRAR</button>
         </div>
     </div>
 
@@ -95,8 +95,7 @@
 
     <script>
         const PIN_SEGURIDAD = "1234";
-        const KEY = "$2a$10$U9Hk9iQvR.u9pD9C4q.yOebW8D09E0D9C4q.yOebW8D09E0D9C4q.";
-        const BID = "6636a04aad19ca34f86419ce"; // Nueva Nube Limpia
+        const API_URL = "https://kvdb.io/K69Ym6V6z2z3Y6Y6z2z3Y6/base_rutas_compartida";
 
         let routes = []; let allPasses = []; let selectedRouteId = null;
 
@@ -112,14 +111,13 @@
         async function loadGlobalNote() {
             const display = document.getElementById('noteDisplay');
             try {
-                const res = await fetch(`https://api.jsonbin.io/v3/b/${BID}/latest`, {
-                    headers: { "X-Master-Key": KEY, "X-Bin-Meta": "false" }
-                });
-                const data = await res.json();
-                const textoFinal = data.text || "Lista de base vacía.";
-                display.innerText = textoFinal;
-                document.getElementById('noteInput').value = textoFinal === "Lista de base vacía." ? "" : textoFinal;
-            } catch (e) { display.innerText = "Sin conexión a la nube."; }
+                const res = await fetch(API_URL);
+                if (res.ok) {
+                    const texto = await res.text();
+                    display.innerText = texto || "Lista vacía.";
+                    document.getElementById('noteInput').value = texto || "";
+                } else { display.innerText = "Lista lista para iniciar."; }
+            } catch (e) { display.innerText = "Error al conectar."; }
         }
 
         function checkPinForEdit() {
@@ -127,7 +125,7 @@
             const now = Date.now();
             if (lastLogin && (now - lastLogin < 10800000)) { openModal('editNoteModal'); }
             else {
-                if(prompt("PIN de Seguridad (Acceso por 3h):") === PIN_SEGURIDAD) {
+                if(prompt("PIN de Seguridad:") === PIN_SEGURIDAD) {
                     localStorage.setItem('last_pin_login', now);
                     openModal('editNoteModal');
                 } else { alert("PIN incorrecto."); }
@@ -137,16 +135,15 @@
         async function saveGlobalNote() {
             const txt = document.getElementById('noteInput').value;
             closeModal('editNoteModal');
-            document.getElementById('noteDisplay').innerText = "Sincronizando cambios...";
+            document.getElementById('noteDisplay').innerText = "Publicando cambios...";
             try {
-                const res = await fetch(`https://api.jsonbin.io/v3/b/${BID}`, {
-                    method: 'PUT',
-                    headers: { "Content-Type": "application/json", "X-Master-Key": KEY },
-                    body: JSON.stringify({ text: txt })
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    body: txt
                 });
-                if(res.ok) { alert("¡Sincronizado con éxito!"); loadGlobalNote(); }
-                else { alert("Error del servidor. Intenta de nuevo."); loadGlobalNote(); }
-            } catch (e) { alert("Error de red."); loadGlobalNote(); }
+                if(res.ok) { alert("¡Publicado! Tus compañeros ya pueden verlo."); loadGlobalNote(); }
+                else { alert("Error al subir."); loadGlobalNote(); }
+            } catch (e) { alert("Sin conexión."); loadGlobalNote(); }
         }
 
         function renderTimerCard(route) {
