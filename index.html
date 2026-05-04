@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Check Rut Pro - V1.9.3</title>
+    <title>Check Rut Pro - V1.9.5</title>
     <style>
         :root {
             --primary-green: #1b4314;
@@ -67,8 +67,8 @@
     </div>
 
     <div id="base" class="section">
-        <button class="btn-edit-note" onclick="checkPinForEdit()">🔒 EDITAR LISTA (REQUIERE PIN)</button>
-        <div id="noteDisplay" class="notepad-container">Cargando datos...</div>
+        <button class="btn-edit-note" onclick="checkPinForEdit()">🔒 EDITAR LISTA</button>
+        <div id="noteDisplay" class="notepad-container">Cargando base...</div>
     </div>
 
     <div id="rutas" class="section">
@@ -92,18 +92,18 @@
         <div class="modal-content">
             <h3>Editar Lista Base</h3>
             <textarea id="noteInput" rows="10"></textarea>
-            <button class="btn-action" onclick="saveGlobalNote()">GUARDAR Y SINCRONIZAR</button>
+            <button class="btn-action" onclick="saveGlobalNote()">ACTUALIZAR NUBE</button>
             <button onclick="closeModal('editNoteModal')" style="background:none; border:none; color:#aaa; width:100%; margin-top:10px;">CERRAR</button>
         </div>
     </div>
 
-    <div class="modal-overlay" id="routeModal"><div class="modal-content"><h3>Nueva Ruta</h3><input type="text" id="routeName" placeholder="Nombre de ruta"><button class="btn-action" onclick="processRoute()">CREAR</button></div></div>
-    <div class="modal-overlay" id="passModal"><div class="modal-content"><h3 id="targetRouteLabel"></h3><select id="unitType"><option value="Combi">🚐 Combi</option><option value="Camión">🚌 Camión</option></select><input type="number" id="unitNumber" placeholder="Número de unidad" inputmode="numeric"><button class="btn-action" onclick="savePass()" style="background:var(--report-green);">REGISTRAR PASO</button></div></div>
+    <div class="modal-overlay" id="routeModal"><div class="modal-content"><h3>Nueva Ruta</h3><input type="text" id="routeName" placeholder="Nombre"><button class="btn-action" onclick="processRoute()">CREAR</button></div></div>
+    <div class="modal-overlay" id="passModal"><div class="modal-content"><h3 id="targetRouteLabel"></h3><select id="unitType"><option value="Combi">🚐 Combi</option><option value="Camión">🚌 Camión</option></select><input type="number" id="unitNumber" placeholder="Unidad" inputmode="numeric"><button class="btn-action" onclick="savePass()" style="background:var(--report-green);">REGISTRAR</button></div></div>
 
     <script>
         const PIN_SEGURIDAD = "1234";
-        const MASTER_KEY = "$2a$10$X87S1v1N1K.H7z3O6I6I6e6I6I6I6I6I6I6I6I6I6I6I6I6";
-        const BIN_ID = "66367503ad19ca34f863e41c";
+        const KEY = "$2a$10$X87S1v1N1K.H7z3O6I6I6e6I6I6I6I6I6I6I6I6I6I6I6I6";
+        const BID = "66367503ad19ca34f863e41c";
 
         let routes = [];
         let allPasses = [];
@@ -127,47 +127,54 @@
         async function loadGlobalNote() {
             const display = document.getElementById('noteDisplay');
             try {
-                const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
-                    headers: { "X-Master-Key": MASTER_KEY, "X-Bin-Meta": "false" }
+                const res = await fetch(`https://api.jsonbin.io/v3/b/${BID}/latest`, {
+                    headers: { "X-Master-Key": KEY, "X-Bin-Meta": "false" }
                 });
                 const data = await res.json();
-                const textoFinal = data.text || "Lista de base vacía.";
-                display.innerText = textoFinal;
-                document.getElementById('noteInput').value = textoFinal === "Lista de base vacía." ? "" : textoFinal;
+                display.innerText = data.text || "Lista de base vacía.";
+                document.getElementById('noteInput').value = data.text || "";
             } catch (e) {
-                display.innerText = "Modo local: No se pudo conectar con la nube.";
+                display.innerText = "Error de conexión.";
             }
         }
 
         function checkPinForEdit() {
-            if(prompt("Introduce el PIN:") === PIN_SEGURIDAD) openModal('editNoteModal');
-            else alert("PIN incorrecto.");
+            const lastLogin = localStorage.getItem('last_pin_login');
+            const now = Date.now();
+            const tresHoras = 3 * 60 * 60 * 1000;
+
+            if (lastLogin && (now - lastLogin < tresHoras)) {
+                openModal('editNoteModal');
+            } else {
+                if(prompt("PIN de acceso (Válido por 3h):") === PIN_SEGURIDAD) {
+                    localStorage.setItem('last_pin_login', now);
+                    openModal('editNoteModal');
+                } else {
+                    alert("PIN incorrecto.");
+                }
+            }
         }
 
         async function saveGlobalNote() {
-            const newText = document.getElementById('noteInput').value;
+            const txt = document.getElementById('noteInput').value;
+            const display = document.getElementById('noteDisplay');
             closeModal('editNoteModal');
-            document.getElementById('noteDisplay').innerText = "Enviando a la nube...";
+            display.innerText = "Sincronizando...";
 
             try {
-                const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+                const res = await fetch(`https://api.jsonbin.io/v3/b/${BID}`, {
                     method: 'PUT',
-                    headers: { 
-                        "Content-Type": "application/json",
-                        "X-Master-Key": MASTER_KEY 
-                    },
-                    body: JSON.stringify({ text: newText })
+                    headers: { "Content-Type": "application/json", "X-Master-Key": KEY },
+                    body: JSON.stringify({ text: txt })
                 });
-                
-                if(response.ok) {
-                    alert("¡Sincronización exitosa!");
+                if(res.ok) {
+                    alert("¡Sincronizado!");
                     loadGlobalNote();
                 } else {
-                    throw new Error("Fallo en servidor");
+                    display.innerText = "Fallo al guardar.";
                 }
             } catch (e) {
-                alert("Error al guardar. Se intentará de nuevo.");
-                loadGlobalNote();
+                display.innerText = "Sin conexión.";
             }
         }
 
@@ -209,7 +216,7 @@
                 }
                 html += `<div class="report-card"><strong>${new Date(p.time).toLocaleTimeString()}</strong> - ${p.type} ${p.number}<div class="report-stats-grid"><div class="stat-box"><span class="stat-label">Diferencia:</span><span class="stat-value">${diffText}</span></div></div></div>`;
             });
-            document.getElementById('historyList').innerHTML = html || 'Sin registros hoy.';
+            document.getElementById('historyList').innerHTML = html || 'Sin registros.';
         }
 
         function switchTab(tabId) {
@@ -237,7 +244,7 @@
         function openModal(id) { document.getElementById(id).style.display='flex'; }
         function closeModal(id) { document.getElementById(id).style.display='none'; }
         function openPassModal(id) { selectedRouteId = id; document.getElementById('targetRouteLabel').innerText = routes.find(r => r.id === id).name; openModal('passModal'); }
-        function confirmDelete(id) { if(confirm("¿Eliminar esta ruta?")) { routes = routes.filter(r => r.id !== id); persist(); location.reload(); } }
+        function confirmDelete(id) { if(confirm("¿Borrar?")) { routes = routes.filter(r => r.id !== id); persist(); location.reload(); } }
     </script>
 </body>
 </html>
