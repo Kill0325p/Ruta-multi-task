@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Check Rut Pro - V2.0.3</title>
+    <title>Check Rut Pro - V2.0.6</title>
     <style>
         :root {
             --primary-green: #1b4314;
@@ -46,21 +46,21 @@
     </nav>
 
     <div id="base" class="section active">
-        <button class="btn-edit-note" onclick="checkPinForEdit()">🔒 EDITAR SALIDAS (SOLO PIN)</button>
-        <div id="noteDisplay" class="notepad-container">Sincronizando con la nube...</div>
+        <button class="btn-edit-note" onclick="checkPinForEdit()">🔒 EDITAR SALIDAS (CON PIN)</button>
+        <div id="noteDisplay" class="notepad-container">Cargando servidor...</div>
     </div>
 
     <div class="modal-overlay" id="editNoteModal">
         <div class="modal-content">
             <h3>Actualizar Frecuencia</h3>
-            <textarea id="noteInput" rows="12" placeholder="Escribe aquí las rutas y horarios..."></textarea>
+            <textarea id="noteInput" rows="12" placeholder="Escribe aquí..."></textarea>
             <button class="btn-action" onclick="saveToMyServer()">PUBLICAR CAMBIOS</button>
             <button onclick="closeModal('editNoteModal')" style="background:none; border:none; color:#aaa; width:100%; margin-top:10px;">CANCELAR</button>
         </div>
     </div>
 
     <script>
-        // --- CONFIGURACIÓN PRIVADA (YA AUTOPUESTA) ---
+        // CONFIGURACIÓN REVISADA (Minúsculas corregidas según captura)
         const PIN_SEGURIDAD = "1234";
         const GIST_ID = "befb4b7fbbbd04b9406f0b0b3fe6bbfe";
         const TOKEN_ADMIN = "ghp_9pBMwzu9Cx240wf2BFDbyV38smD04R1s15Ta"; 
@@ -76,31 +76,50 @@
                 const contenido = data.files[fileName].content;
                 display.innerText = contenido || "Lista vacía.";
                 document.getElementById('noteInput').value = contenido || "";
-            } catch (e) { display.innerText = "Sin conexión a la nube."; }
+            } catch (e) { display.innerText = "Error al conectar."; }
         }
 
         async function saveToMyServer() {
             const text = document.getElementById('noteInput').value;
-            document.getElementById('noteDisplay').innerText = "Guardando...";
+            const display = document.getElementById('noteDisplay');
+            display.innerText = "Sincronizando...";
             closeModal('editNoteModal');
 
             try {
                 const res = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
                     method: 'PATCH',
-                    headers: { "Authorization": `token ${TOKEN_ADMIN}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ files: { "salidas.txt": { content: text } } })
+                    headers: { 
+                        "Authorization": `Bearer ${TOKEN_ADMIN}`,
+                        "Content-Type": "application/json" 
+                    },
+                    body: JSON.stringify({ 
+                        files: { "salidas.txt": { content: text } } 
+                    })
                 });
 
                 if(res.ok) {
-                    alert("¡Actualizado para todos!");
+                    alert("¡Éxito! Lista actualizada.");
                     loadFromMyServer();
-                } else { alert("Error de servidor. Intenta de nuevo."); loadFromMyServer(); }
+                } else {
+                    const err = await res.json();
+                    alert("GitHub dice: " + err.message);
+                    loadFromMyServer();
+                }
             } catch (e) { alert("Error de red."); loadFromMyServer(); }
         }
 
         function checkPinForEdit() {
-            if(prompt("Introduce el PIN para editar:") === PIN_SEGURIDAD) openModal('editNoteModal');
-            else alert("PIN incorrecto.");
+            // Sistema de sesión de 3 horas
+            const lastLogin = localStorage.getItem('last_pin_login');
+            const now = Date.now();
+            if (lastLogin && (now - lastLogin < 10800000)) { 
+                openModal('editNoteModal'); 
+            } else {
+                if(prompt("Introduce el PIN:") === PIN_SEGURIDAD) {
+                    localStorage.setItem('last_pin_login', now);
+                    openModal('editNoteModal');
+                } else { alert("PIN incorrecto."); }
+            }
         }
 
         function openModal(id) { document.getElementById(id).style.display='flex'; }
