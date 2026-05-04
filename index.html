@@ -3,43 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Check Rut Pro - V2.1.2</title>
+    <title>Check Rut Pro - V2.1.4</title>
     <style>
-        :root { --p: #1976d2; --bg: #121212; --card: #1e1e1e; }
-        body { margin: 0; font-family: sans-serif; background: var(--bg); color: white; overflow-x: hidden; }
-        .nav { display: flex; background: var(--p); position: sticky; top: 0; z-index: 100; }
-        .tab { flex: 1; padding: 15px 0; text-align: center; font-size: 0.7rem; font-weight: bold; color: rgba(255,255,255,0.6); cursor: pointer; border-bottom: 4px solid transparent; }
-        .tab.active { color: white; border-bottom: 4px solid #fff; background: rgba(255,255,255,0.1); }
-        .section { display: none; padding: 15px; }
+        :root {
+            --tabs-blue: #1976d2;
+            --bg-dark: #121212;
+            --card-bg: #1e1e1e;
+            --accent-blue: #448aff;
+            --text-gray: #aaa;
+        }
+
+        body { margin: 0; font-family: sans-serif; background-color: var(--bg-dark); color: white; }
+
+        /* Navegación Azul */
+        .nav-tabs {
+            display: flex;
+            background-color: var(--tabs-blue);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            overflow-x: auto;
+        }
+
+        .tab {
+            flex: 1;
+            min-width: 80px;
+            padding: 15px 0;
+            text-align: center;
+            font-size: 0.65rem;
+            font-weight: bold;
+            color: rgba(255,255,255,0.6);
+            cursor: pointer;
+            border-bottom: 4px solid transparent;
+        }
+
+        .tab.active {
+            color: white;
+            border-bottom: 4px solid #fff;
+            background: rgba(255,255,255,0.1);
+        }
+
+        /* Secciones */
+        .section { display: none; padding: 15px; min-height: 80vh; }
         .section.active { display: block; }
-        .notepad { background: #000; border-radius: 12px; padding: 15px; border: 1px solid #333; min-height: 250px; white-space: pre-wrap; font-family: monospace; color: #00ff00; font-size: 1rem; }
-        .btn-edit { background: #333; color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-weight: bold; margin-bottom: 10px; }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+
+        /* Estilos Salidas */
+        .notepad {
+            background: #000;
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid #333;
+            min-height: 250px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            color: #00ff00;
+            font-size: 1rem;
+        }
+
+        .btn-edit {
+            background: #333;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            width: 100%;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        /* Modales */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            align-items: center; justify-content: center;
+            z-index: 1000; padding: 20px;
+        }
+
         .modal-content { background: #2c2c2c; padding: 20px; border-radius: 20px; width: 100%; max-width: 400px; }
-        textarea { width: 100%; background: #1a1a1a; border: 1px solid #444; color: white; padding: 10px; border-radius: 10px; box-sizing: border-box; font-size: 1rem; }
-        .btn-pub { background: #448aff; color: white; border: none; padding: 15px; border-radius: 10px; width: 100%; margin-top: 10px; font-weight: bold; }
+        textarea { width: 100%; background: #1a1a1a; border: 1px solid #444; color: white; padding: 10px; border-radius: 10px; box-sizing: border-box; }
+        .btn-pub { background: var(--accent-blue); color: white; border: none; padding: 15px; border-radius: 10px; width: 100%; margin-top: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <nav class="nav">
-        <div class="tab active" onclick="switchTab('base')">📋 SALIDAS</div>
-        <div class="tab" onclick="switchTab('horarios')">🕒 TIEMPOS</div>
+    <nav class="nav-tabs">
+        <div class="tab" id="tab-llamar" onclick="switchTab('llamar')">📞 CONTACTOS</div>
+        <div class="tab active" id="tab-base" onclick="switchTab('base')">📋 SALIDAS</div>
+        <div class="tab" id="tab-rutas" onclick="switchTab('rutas')">🗺️ RUTAS</div>
+        <div class="tab" id="tab-horarios" onclick="switchTab('horarios')">🕒 TIEMPOS</div>
+        <div class="tab" id="tab-reportes" onclick="switchTab('reportes')">📊 DIARIO</div>
     </nav>
 
     <div id="base" class="section active">
         <button class="btn-edit" onclick="checkPin()">🔒 EDITAR SALIDAS (CON PIN)</button>
-        <div id="noteDisplay" class="notepad">Conectando con el servidor...</div>
+        <div id="noteDisplay" class="notepad">Conectando con la nube...</div>
     </div>
 
-    <div id="horarios" class="section"><h3>Cronómetros</h3></div>
+    <div id="llamar" class="section"><h3>📞 Contactos de Emergencia</h3></div>
+    <div id="rutas" class="section"><h3>🗺️ Control de Rutas</h3></div>
+    <div id="horarios" class="section"><h3>🕒 Cronómetros y Alertas</h3></div>
+    <div id="reportes" class="section"><h3>📊 Reporte Diario</h3></div>
 
     <div class="modal" id="modalEdit">
         <div class="modal-content">
             <h3>Actualizar Lista</h3>
             <textarea id="noteInput" rows="10"></textarea>
             <button class="btn-pub" onclick="saveData()">PUBLICAR CAMBIOS</button>
-            <button onclick="closeM()" style="background:none; border:none; color:grey; width:100%; margin-top:15px;">CANCELAR</button>
+            <button onclick="closeM()" style="background:none; border:none; color:grey; width:100%; margin-top:10px;">Cancelar</button>
         </div>
     </div>
 
@@ -47,7 +120,6 @@
         // CONFIGURACIÓN OFICIAL
         const PIN = "1234";
         const GID = "befb4b7fbbbd04b9406f0b0b3fe6bbfe";
-        // TOKEN CORREGIDO CON MAYÚSCULAS EXACTAS
         const TKN = "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"; 
 
         window.onload = loadData;
@@ -59,7 +131,7 @@
                 const content = d.files[Object.keys(d.files)[0]].content;
                 document.getElementById('noteDisplay').innerText = content || "Lista vacía.";
                 document.getElementById('noteInput').value = content || "";
-            } catch (e) { document.getElementById('noteDisplay').innerText = "Error al cargar datos."; }
+            } catch (e) { document.getElementById('noteDisplay').innerText = "Error al cargar."; }
         }
 
         async function saveData() {
@@ -69,37 +141,30 @@
             try {
                 const r = await fetch(`https://api.github.com/gists/${GID}`, {
                     method: 'PATCH',
-                    headers: { 
-                        "Authorization": `token ${TKN}`,
-                        "Content-Type": "application/json"
-                    },
+                    headers: { "Authorization": `token ${TKN}` },
                     body: JSON.stringify({ files: { "salidas.txt": { content: val } } })
                 });
-                if(r.ok) { 
-                    alert("¡Éxito! Cambios publicados."); 
-                    loadData(); 
-                } else { 
-                    const error = await r.json();
-                    alert("Error: " + error.message); 
-                    loadData(); 
-                }
-            } catch (e) { alert("Sin conexión a internet."); loadData(); }
+                if(r.ok) { alert("¡Actualizado!"); loadData(); }
+                else { alert("Error de servidor."); loadData(); }
+            } catch (e) { alert("Sin conexión."); loadData(); }
         }
 
         function checkPin() {
             const login = localStorage.getItem('last_l');
             if (login && (Date.now() - login < 10800000)) return openM();
-            if(prompt("Introduce el PIN:") === PIN) { 
-                localStorage.setItem('last_l', Date.now()); 
-                openM(); 
-            } else { alert("PIN Incorrecto."); }
+            if(prompt("PIN:") === PIN) { localStorage.setItem('last_l', Date.now()); openM(); }
+            else { alert("PIN Incorrecto."); }
         }
 
         function openM() { document.getElementById('modalEdit').style.display='flex'; }
         function closeM() { document.getElementById('modalEdit').style.display='none'; }
+
         function switchTab(id) {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.getElementById(id).classList.add('active');
+            document.getElementById('tab-' + id).classList.add('active');
+            if(id === 'base') loadData();
         }
     </script>
 </body>
