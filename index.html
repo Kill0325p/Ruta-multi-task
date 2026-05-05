@@ -162,6 +162,25 @@
             render();
         }
 
+        // --- FUNCIÓN DE BORRADO GLOBAL ACTUALIZADA ---
+        function deleteRuta(idx) {
+            const nombreRuta = rutas[idx].n;
+            
+            if(confirm(`¿ELIMINAR TODO?\n\nSe borrará la ruta "${nombreRuta}" y todos sus registros de cualquier fecha.`)) {
+                // 1. Quitar de la lista de rutas
+                rutas.splice(idx, 1);
+                
+                // 2. Limpiar todos los registros históricos que coincidan con ese nombre
+                for (let fecha in historial) {
+                    if (Array.isArray(historial[fecha])) {
+                        historial[fecha] = historial[fecha].filter(reg => reg.ruta !== nombreRuta);
+                    }
+                }
+                
+                save();
+            }
+        }
+
         function init() {
             const hoy = getFechaLocal();
             if (!historial[hoy]) historial[hoy] = [];
@@ -254,11 +273,11 @@
         }
 
         function render() {
-            // Ajustes
+            // Ajustes - Usando deleteRuta(i) corregido
             document.getElementById('lista-rutas-config').innerHTML = rutas.map((r,i) => `
                 <div class="card flex flex-col gap-2">
                     <div class="flex justify-between font-bold text-blue-600"><span>${r.n}</span>
-                    <button onclick="rutas.splice(${i},1);save()" class="text-red-400"><i class="fas fa-trash-alt"></i></button></div>
+                    <button onclick="deleteRuta(${i})" class="text-red-400"><i class="fas fa-trash-alt"></i></button></div>
                     <div class="flex items-center gap-3 text-xs">
                         Alarma: <input type="number" value="${r.alarm}" onchange="rutas[${i}].alarm=parseInt(this.value);save()" class="w-12 border rounded px-1 text-center font-bold"> min
                         <button onclick="rutas[${i}].on=!rutas[${i}].on;save()" class="ml-auto text-lg ${r.on?'text-blue-500':'text-gray-300'}"><i class="fas ${r.on?'fa-bell':'fa-bell-slash'}"></i></button>
