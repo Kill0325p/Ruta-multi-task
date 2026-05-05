@@ -3,32 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Logística Pro V4.8</title>
+    <title>Logística Pro V4.9 - Fix Notas</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --primary: #2563eb; --bg: #f3f4f6; --card: #ffffff; --text: #1f2937; }
-        .dark { --bg: #111827; --card: #1f2937; --text: #f9fafb; }
+        :root { --primary: #2563eb; --bg: #f3f4f6; --card: #ffffff; --text: #1f2937; --textarea-bg: #ffffff; --textarea-text: #1f2937; }
+        .dark { --bg: #111827; --card: #1f2937; --text: #f9fafb; --textarea-bg: #1f2937; --textarea-text: #f9fafb; }
+        
         body { background-color: var(--bg); color: var(--text); font-family: sans-serif; overflow: hidden; padding-top: 10px; }
+        
         .tab-content { display: none; height: calc(100vh - 100px); overflow-y: auto; padding: 15px; }
         .tab-content.active { display: block; animation: fadeIn 0.2s ease-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
         .card { background: var(--card); border-radius: 15px; padding: 15px; margin-bottom: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative; }
+        
         .nav-bottom { position: fixed; bottom: 0; width: 100%; background: var(--card); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #e5e7eb; z-index: 50; }
         .nav-item { text-align: center; font-size: 10px; color: #9ca3af; flex: 1; }
         .nav-item.active { color: var(--primary); }
+        
         .tipo-camion { border: 2px solid #ef4444 !important; background: #fee2e2 !important; color: #b91c1c !important; }
         .dark .tipo-camion { background: #450a0a !important; color: #fca5a5 !important; }
+        
         .badge-last { background: #3b82f6; color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: bold; }
-        /* Mejora para el área de texto */
-        textarea { outline: none; resize: none; transition: background 0.3s; }
+        
+        /* ESTILO CORREGIDO PARA EL BLOC DE NOTAS */
+        textarea { outline: none; resize: none; transition: background 0.3s, color 0.3s; }
+        
+        /* Estilo específico para Notas en Modo Claro */
+        #notas-input { background-color: #ffffff; color: #1f2937; }
+        
+        /* Estilo específico para Notas en Modo Oscuro */
+        .dark #notas-input { background-color: #1f2937; color: #f9fafb; }
+        
+        /* Estilo para Base Grupal (ya estaba bien) */
+        #base-editable { background-color: #f3f4f6; color: #1f2937; }
+        .dark #base-editable { background-color: #111827; color: #f9fafb; }
     </style>
 </head>
 <body onclick="activarAudioSilent()">
 
     <div id="tab1" class="tab-content active">
         <h2 class="font-bold mb-3 text-blue-500 uppercase text-xs tracking-widest">Bloc de Notas Personal</h2>
-        <textarea id="notas-input" class="w-full h-[70vh] p-4 rounded-2xl border dark:bg-gray-800 text-sm shadow-inner" placeholder="Tus notas privadas..."></textarea>
+        <textarea id="notas-input" class="w-full h-[70vh] p-4 rounded-2xl border border-gray-200 dark:border-gray-700 text-sm shadow-inner" placeholder="Tus notas privadas..."></textarea>
     </div>
 
     <div id="tab2" class="tab-content">
@@ -39,7 +56,7 @@
             </div>
             <button id="btn-cloud" onclick="updateCloudData()" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg transition-all active:scale-95">GUARDAR NUBE</button>
         </div>
-        <textarea id="base-editable" class="w-full h-[65vh] p-3 rounded-2xl border-2 border-blue-100 dark:bg-gray-800 text-sm font-mono focus:border-blue-500" placeholder="Escribe aquí la lista de la base..."></textarea>
+        <textarea id="base-editable" class="w-full h-[65vh] p-3 rounded-2xl border-2 border-blue-100 dark:border-gray-800 text-sm font-mono focus:border-blue-500" placeholder="Escribe aquí la lista de la base..."></textarea>
     </div>
 
     <div id="tab3" class="tab-content">
@@ -84,11 +101,9 @@
     </nav>
 
     <script>
-        // CONFIGURACIÓN DE NUBE (GIST)
         const GID = "befb4b7fbbbd04b9406f0b0b3fe6bbfe";
         const TKN = "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";
         
-        // AUDIO DE ALTA INTENSIDAD
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         let audioHabilitado = false;
 
@@ -98,7 +113,7 @@
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.type = 'square'; // Sonido agresivo
+            osc.type = 'square';
             osc.frequency.setValueAtTime(1100, tiempo);
             gain.gain.setValueAtTime(0, tiempo);
             gain.gain.linearRampToValueAtTime(0.9, tiempo + 0.02);
@@ -114,7 +129,6 @@
             for(let i=0; i<4; i++) bipFuerte(despues + (i*0.25));
         }
 
-        // DATOS Y ESTADO
         let rutas = JSON.parse(localStorage.getItem('rutas_v41')) || [];
         let historial = JSON.parse(localStorage.getItem('historial_v41')) || {};
         let tabActual = 1;
@@ -130,7 +144,6 @@
             tick();
         }
 
-        // FUNCIONES DE NUBE (CON OPTIMIZACIÓN)
         async function fetchCloudData() {
             try {
                 const res = await fetch(`https://api.github.com/gists/${GID}`);
@@ -216,7 +229,7 @@
 
         function render() {
             actualizarSelectorRutas();
-            // Panel de Ajustes
+            // Ajustes
             document.getElementById('lista-rutas-config').innerHTML = rutas.map((r,i) => `
                 <div class="card flex flex-col gap-2">
                     <div class="flex justify-between font-bold text-blue-600"><span>${r.n}</span><button onclick="eliminarRutaCompleta(${i})" class="text-red-400"><i class="fas fa-trash-alt"></i></button></div>
@@ -227,7 +240,7 @@
                 </div>
             `).join('');
 
-            // Panel de Monitoreo
+            // Tiempos
             document.getElementById('panel-tiempos').innerHTML = rutas.map((r,i) => {
                 let regsRuta = (historial[getFechaLocal()] || []).filter(x => x.ruta === r.n);
                 let last = regsRuta[regsRuta.length - 1];
