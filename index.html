@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Logística Pro V5.2 - AutoSync</title>
+    <title>Logística Pro V5.3 - Fix Sync</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -35,13 +35,13 @@
             <div>
                 <div class="flex items-center gap-2">
                     <h2 class="font-bold text-blue-600">Base Grupal</h2>
-                    <button onclick="fetchCloudData()" class="text-blue-400 active:rotate-180 transition-transform"><i class="fas fa-sync-alt"></i></button>
+                    <button onclick="fetchCloudData()" class="text-blue-400 active:rotate-180 transition-transform p-1"><i class="fas fa-sync-alt"></i></button>
                 </div>
                 <span id="timer-sync" class="text-[9px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-bold uppercase tracking-tighter">Próxima act: 30s</span>
             </div>
-            <button id="btn-cloud" onclick="updateCloudData()" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg active:scale-95">GUARDAR NUBE</button>
+            <button id="btn-cloud" onclick="updateCloudData()" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg active:scale-95 transition-all">GUARDAR NUBE</button>
         </div>
-        <textarea id="base-editable" class="w-full h-[65vh] p-3 rounded-2xl text-sm font-mono" placeholder="Lista de salida..."></textarea>
+        <textarea id="base-editable" oninput="pausarTimer()" class="w-full h-[65vh] p-3 rounded-2xl text-sm font-mono" placeholder="Lista de salida..."></textarea>
     </div>
 
     <div id="tab3" class="tab-content">
@@ -89,8 +89,10 @@
         const TKN = "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";
         
         let countdown = 30;
+        let estaEditando = false;
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         let audioHabilitado = false;
+        
         function activarAudioSilent() { if (!audioHabilitado) audioCtx.resume().then(() => audioHabilitado = true); }
 
         function bipFuerte(tiempo) {
@@ -125,9 +127,15 @@
             setInterval(autoUpdateTimer, 1000);
         }
 
-        // TIMER DE ACTUALIZACIÓN AUTOMÁTICA
+        function pausarTimer() {
+            estaEditando = true;
+            document.getElementById('timer-sync').innerText = "EDITANDO...";
+            document.getElementById('timer-sync').style.backgroundColor = "#fef9c3";
+            document.getElementById('timer-sync').style.color = "#a16207";
+        }
+
         function autoUpdateTimer() {
-            if (tabActual === 2) { // Solo si está en la pestaña de Base
+            if (tabActual === 2 && !estaEditando) {
                 countdown--;
                 const timerEl = document.getElementById('timer-sync');
                 timerEl.innerText = `Próxima act: ${countdown}s`;
@@ -139,15 +147,17 @@
         }
 
         async function fetchCloudData() {
+            if (estaEditando) return; // No sobreescribir si el usuario está escribiendo
             const timerEl = document.getElementById('timer-sync');
             try {
-                const res = await fetch(`https://api.github.com/gists/${GID}`);
+                const res = await fetch(`https://api.github.com/gists/${GID}?t=${Date.now()}`);
                 const data = await res.json();
                 document.getElementById('base-editable').value = data.files["base_logistica.txt"].content;
                 timerEl.style.backgroundColor = "";
                 timerEl.style.color = "";
+                countdown = 30;
             } catch (e) { 
-                timerEl.innerText = "Error de conexión";
+                timerEl.innerText = "Error conexión";
                 timerEl.style.backgroundColor = "#fee2e2";
                 timerEl.style.color = "#ef4444";
             }
@@ -156,24 +166,32 @@
         async function updateCloudData() {
             const btn = document.getElementById('btn-cloud');
             const content = document.getElementById('base-editable').value;
-            btn.disabled = true; btn.innerText = "ESPERE...";
+            btn.disabled = true; 
+            btn.innerText = "ENVIANDO...";
+            btn.style.backgroundColor = "#fbbf24";
+            
             try {
-                await fetch(`https://api.github.com/gists/${GID}`, {
+                const response = await fetch(`https://api.github.com/gists/${GID}`, {
                     method: 'PATCH',
-                    headers: { 'Authorization': `token ${TKN}` },
+                    headers: { 'Authorization': `token ${TKN}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({ files: { "base_logistica.txt": { content } } })
                 });
-                btn.innerText = "✓ GUARDADO";
-                btn.style.backgroundColor = "#10b981";
-                countdown = 30; // Reinicia el contador al guardar
+                
+                if(response.ok) {
+                    btn.innerText = "✓ GUARDADO";
+                    btn.style.backgroundColor = "#10b981";
+                    estaEditando = false;
+                    countdown = 30;
+                } else { throw new Error(); }
             } catch (e) { 
                 btn.innerText = "ERROR";
                 btn.style.backgroundColor = "#ef4444";
             } finally {
                 setTimeout(() => {
-                    btn.disabled = false; btn.innerText = "GUARDAR NUBE";
+                    btn.disabled = false; 
+                    btn.innerText = "GUARDAR NUBE";
                     btn.style.backgroundColor = "";
-                }, 2000);
+                }, 2500);
             }
         }
 
@@ -186,7 +204,7 @@
             document.getElementById('tab'+t).classList.add('active');
             document.querySelectorAll('.nav-item')[t-1].classList.add('active');
             tabActual = t;
-            if (t === 2) countdown = 30; // Reinicia al entrar a la pestaña
+            if (t === 2) { estaEditando = false; countdown = 30; }
         }
 
         function regPase(idx) {
@@ -199,7 +217,7 @@
         }
 
         function eliminarRutaCompleta(idx) {
-            if(confirm(`¿Eliminar permanentemente?`)) {
+            if(confirm(`¿Eliminar ruta?`)) {
                 const nombreRuta = rutas[idx].n;
                 rutas.splice(idx, 1);
                 Object.keys(historial).forEach(fecha => {
