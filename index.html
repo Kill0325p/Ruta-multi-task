@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Logística Pro V5.5 - Cloud Fix</title>
+    <title>Logística Pro - Versión Original</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -20,7 +20,7 @@
         .nav-item { text-align: center; font-size: 10px; color: #9ca3af; flex: 1; }
         .nav-item.active { color: #2563eb; }
         
-        textarea, input, select { background-color: var(--input-bg) !important; color: var(--text) !important; border: 1px solid var(--border) !important; outline: none; resize: none; width: 100%; }
+        textarea, input, select { background-color: var(--input-bg) !important; color: var(--text) !important; border: 1px solid var(--border) !important; outline: none; resize: none; width: 100%; border-radius: 10px; }
         .tipo-camion { border: 2px solid #ef4444 !important; background: #fee2e2 !important; color: #b91c1c !important; }
         .dark .tipo-camion { background: #450a0a !important; color: #fca5a5 !important; }
         .badge-last { background: #3b82f6; color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: bold; }
@@ -28,31 +28,31 @@
 </head>
 <body onclick="activarAudioSilent()">
 
-    <div id="tab1" class="tab-content active">
-        <h2 class="font-bold mb-3 text-blue-500 uppercase text-xs tracking-widest text-center">Bloc de Notas</h2>
-        <textarea id="notas-input" class="w-full h-[70vh] p-4 rounded-2xl text-sm" placeholder="Escribe aquí..."></textarea>
+    <div id="tab1" class="tab-content">
+        <h2 class="font-bold mb-3 text-blue-500 uppercase text-xs text-center">Bloc de Notas</h2>
+        <textarea id="notas-input" class="w-full h-[70vh] p-4 text-sm" placeholder="Escribe aquí..."></textarea>
     </div>
 
-    <div id="tab2" class="tab-content">
+    <div id="tab2" class="tab-content active">
         <div class="flex justify-between items-center mb-4">
             <div class="flex items-center gap-2">
                 <div>
                     <h2 class="font-bold text-blue-600">Base Grupal</h2>
-                    <span id="cloud-status" class="text-[9px] bg-green-100 text-green-600 px-2 py-0.5 rounded-full font-bold">CONECTADO</span>
+                    <span id="cloud-status" class="text-[9px] bg-green-100 text-green-600 px-2 py-0.5 rounded-full font-bold">ONLINE</span>
                 </div>
-                <button onclick="fetchCloudData()" class="bg-gray-100 dark:bg-gray-700 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center active:rotate-180 transition-transform">
+                <button onclick="fetchCloudData()" class="bg-gray-100 dark:bg-gray-700 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center">
                     <i class="fas fa-sync-alt text-xs"></i>
                 </button>
             </div>
             <button id="btn-cloud" onclick="updateCloudData()" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg transition-all active:scale-95">GUARDAR NUBE</button>
         </div>
-        <textarea id="base-editable" class="w-full h-[65vh] p-3 rounded-2xl text-sm font-mono" placeholder="Cargando base de datos..."></textarea>
+        <textarea id="base-editable" class="w-full h-[65vh] p-3 font-mono text-sm" placeholder="Sincronizando..."></textarea>
     </div>
 
     <div id="tab3" class="tab-content">
         <h2 class="font-bold mb-4 text-center uppercase text-xs text-gray-400">Configuración</h2>
         <div class="flex gap-2 mb-6">
-            <input id="input-ruta" type="text" placeholder="Nueva Ruta" class="flex-1 p-3 rounded-xl">
+            <input id="input-ruta" type="text" placeholder="Nueva Ruta" class="flex-1 p-3 rounded-xl font-bold">
             <button onclick="addRuta()" class="bg-green-600 text-white px-6 rounded-xl font-bold">+</button>
         </div>
         <div class="flex items-center justify-between p-4 card mb-6">
@@ -62,7 +62,9 @@
         <div id="lista-rutas-config"></div>
     </div>
 
-    <div id="tab4" class="tab-content"><div id="panel-tiempos"></div></div>
+    <div id="tab4" class="tab-content">
+        <div id="panel-tiempos"></div>
+    </div>
 
     <div id="tab5" class="tab-content">
         <div class="flex flex-col gap-3 mb-6">
@@ -79,17 +81,17 @@
     </div>
 
     <nav class="nav-bottom">
-        <div class="nav-item active" onclick="go(1)"><i class="fas fa-edit fa-lg"></i><div>Notas</div></div>
-        <div class="nav-item" onclick="go(2)"><i class="fas fa-cloud fa-lg"></i><div>Base</div></div>
+        <div class="nav-item" onclick="go(1)"><i class="fas fa-edit fa-lg"></i><div>Notas</div></div>
+        <div class="nav-item active" onclick="go(2)"><i class="fas fa-cloud fa-lg"></i><div>Base</div></div>
         <div class="nav-item" onclick="go(3)"><i class="fas fa-tools fa-lg"></i><div>Ajustes</div></div>
         <div class="nav-item" onclick="go(4)"><i class="fas fa-stopwatch fa-lg"></i><div>Tiempos</div></div>
         <div class="nav-item" onclick="go(5)"><i class="fas fa-list-ul fa-lg"></i><div>Reporte</div></div>
     </nav>
 
     <script>
-        const GID = "befb4b7fbbbd04b9406f0b0b3fe6bbfe";
-        const TKN = "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";
-        
+        const BIN_ID = "69fa0670aaba882197744c88";
+        const API_KEY = "$2a$10$iAE2V218BgWDZNqkKfpzGerowanmBp/6LMaYXswcLoRcKf9RffLH2";
+
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         let audioHabilitado = false;
         function activarAudioSilent() { if (!audioHabilitado) audioCtx.resume().then(() => audioHabilitado = true); }
@@ -111,59 +113,37 @@
 
         let rutas = JSON.parse(localStorage.getItem('rutas_v41')) || [];
         let historial = JSON.parse(localStorage.getItem('historial_v41')) || {};
-        let tabActual = 1;
-
-        function init() {
-            const hoy = getFechaLocal();
-            if (!historial[hoy]) historial[hoy] = [];
-            document.getElementById('calendar-filter').value = hoy;
-            document.getElementById('notas-input').value = localStorage.getItem('notas_v41') || '';
-            
-            if (localStorage.getItem('tema_oscuro') === 'true') {
-                document.body.classList.add('dark');
-                document.getElementById('dark-toggle').checked = true;
-            }
-            
-            fetchCloudData(); actualizarSelectorRutas(); render(); tick();
-        }
+        let tabActual = 2;
 
         async function fetchCloudData() {
             const status = document.getElementById('cloud-status');
-            status.innerText = "ACTUALIZANDO...";
+            status.innerText = "BUSCANDO...";
             try {
-                const res = await fetch(`https://api.github.com/gists/${GID}?t=${Date.now()}`);
+                const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+                    headers: { "X-Master-Key": API_KEY, "X-Bin-Meta": "false" }
+                });
                 const data = await res.json();
-                const content = data.files["base_logistica.txt"].content;
-                document.getElementById('base-editable').value = content;
-                status.innerText = "ACTIVO";
-            } catch (e) { status.innerText = "ERROR"; }
+                document.getElementById('base-editable').value = data.contenido || "";
+                status.innerText = "CONECTADO";
+            } catch (e) { status.innerText = "ERROR RED"; }
         }
 
         async function updateCloudData() {
             const btn = document.getElementById('btn-cloud');
-            const content = document.getElementById('base-editable').value;
+            const texto = document.getElementById('base-editable').value;
             btn.disabled = true; btn.innerText = "GUARDANDO...";
-
             try {
-                const res = await fetch(`https://api.github.com/gists/${GID}`, {
-                    method: 'PATCH',
-                    headers: { 'Authorization': `token ${TKN}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ files: { "base_logistica.txt": { content } } })
+                const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+                    method: 'PUT',
+                    headers: { "Content-Type": "application/json", "X-Master-Key": API_KEY },
+                    body: JSON.stringify({ contenido: texto })
                 });
-
                 if (res.ok) {
                     btn.innerText = "✓ GUARDADO";
                     btn.style.backgroundColor = "#10b981";
-                } else { throw new Error(); }
-            } catch (e) {
-                btn.innerText = "ERROR TOKEN";
-                btn.style.backgroundColor = "#ef4444";
-            } finally {
-                setTimeout(() => {
-                    btn.disabled = false; btn.innerText = "GUARDAR NUBE";
-                    btn.style.backgroundColor = "";
-                }, 2000);
-            }
+                }
+            } catch (e) { btn.innerText = "ERROR"; }
+            finally { setTimeout(() => { btn.disabled = false; btn.innerText = "GUARDAR NUBE"; btn.style.backgroundColor = ""; }, 2000); }
         }
 
         function toggleDarkMode() {
@@ -202,10 +182,8 @@
             document.getElementById('lista-rutas-config').innerHTML = rutas.map((r,i) => `
                 <div class="card flex flex-col gap-2">
                     <div class="flex justify-between font-bold text-blue-600"><span>${r.n}</span><button onclick="rutas.splice(${i},1);save()" class="text-red-400"><i class="fas fa-trash-alt"></i></button></div>
-                    <div class="flex items-center gap-3 text-xs">
-                        Alarma: <input type="number" value="${r.alarm}" onchange="rutas[${i}].alarm=this.value;save()" class="w-12 border rounded text-center font-bold"> min
-                        <button onclick="rutas[${i}].on=!rutas[${i}].on;save()" class="ml-auto text-lg ${r.on?'text-blue-500':'text-gray-300'}"><i class="fas ${r.on?'fa-bell':'fa-bell-slash'}"></i></button>
-                    </div>
+                    <div class="flex items-center gap-3 text-xs">Alarma: <input type="number" value="${r.alarm}" onchange="rutas[${i}].alarm=this.value;save()" class="w-12 border rounded text-center font-bold"> min
+                    <button onclick="rutas[${i}].on=!rutas[${i}].on;save()" class="ml-auto text-lg ${r.on?'text-blue-500':'text-gray-300'}"><i class="fas ${r.on?'fa-bell':'fa-bell-slash'}"></i></button></div>
                 </div>
             `).join('');
 
@@ -222,9 +200,7 @@
                         </div>
                         <div class="flex gap-2">
                             <input id="unit-${i}" type="number" placeholder="ID" class="w-20 p-3 rounded-xl font-bold">
-                            <select id="tipo-${i}" class="flex-1 p-3 rounded-xl text-xs font-bold">
-                                <option>Combi</option><option>Camión</option>
-                            </select>
+                            <select id="tipo-${i}" class="flex-1 p-3 rounded-xl text-xs font-bold"><option>Combi</option><option>Camión</option></select>
                             <button onclick="regPase(${i})" class="bg-blue-600 text-white px-6 rounded-xl font-bold">OK</button>
                         </div>
                     </div>
@@ -238,7 +214,7 @@
             const rutaSel = document.getElementById('ruta-filter').value;
             const regs = (historial[fecha] || []).filter(r => r.ruta === rutaSel);
             let h = regs.length > 0 ? `<div class="mb-4 text-center font-black text-blue-600 text-xs">${rutaSel}</div>` : '';
-            regs.slice().reverse().forEach((r, idx) => {
+            regs.slice().reverse().forEach((r) => {
                 h += `<div class="card p-4 flex justify-between items-center text-[11px]">
                     <div><span class="font-black text-blue-600 text-sm">#${r.unidad}</span> | <b>${new Date(r.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</b></div>
                     <div class="opacity-50 font-bold">${r.tipo}</div>
@@ -272,17 +248,30 @@
             if (actual) sel.value = actual;
         }
 
-        let startX = 0;
-        document.addEventListener('touchstart', e => startX = e.touches[0].clientX);
-        document.addEventListener('touchend', e => {
-            let diff = startX - e.changedTouches[0].clientX;
-            if(Math.abs(diff) > 80) {
-                if(diff > 0 && tabActual < 5) go(tabActual+1);
-                if(diff < 0 && tabActual > 1) go(tabActual-1);
-            }
-        });
+        function copyWA() {
+            const fecha = document.getElementById('calendar-filter').value;
+            const rutaSel = document.getElementById('ruta-filter').value;
+            const regs = (historial[fecha] || []).filter(r => r.ruta === rutaSel);
+            if(regs.length === 0) return alert("No hay datos");
+            let txt = `📋 REPORTE: ${rutaSel}\n📅 FECHA: ${fecha}\n\n`;
+            regs.forEach(r => txt += `• #${r.unidad} - ${new Date(r.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} (${r.tipo})\n`);
+            navigator.clipboard.writeText(txt).then(() => alert("Copiado para WhatsApp"));
+        }
 
         document.getElementById('notas-input').oninput = (e) => localStorage.setItem('notas_v41', e.target.value);
+        
+        function init() {
+            const hoy = getFechaLocal();
+            if (!historial[hoy]) historial[hoy] = [];
+            document.getElementById('calendar-filter').value = hoy;
+            document.getElementById('notas-input').value = localStorage.getItem('notas_v41') || '';
+            if (localStorage.getItem('tema_oscuro') === 'true') {
+                document.body.classList.add('dark');
+                document.getElementById('dark-toggle').checked = true;
+            }
+            fetchCloudData(); render(); tick();
+        }
+
         init();
     </script>
 </body>
