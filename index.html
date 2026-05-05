@@ -3,62 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Logística Pro V5.1 - Full Light Fix</title>
+    <title>Logística Pro V5.2 - AutoSync</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { 
-            --bg: #f3f4f6; 
-            --card: #ffffff; 
-            --text: #1f2937; 
-            --border: #d1d5db;
-            --input-bg: #ffffff;
-        }
-        .dark { 
-            --bg: #111827; 
-            --card: #1f2937; 
-            --text: #f9fafb; 
-            --border: #4b5563;
-            --input-bg: #374151;
-        }
-        
+        :root { --bg: #f3f4f6; --card: #ffffff; --text: #1f2937; --border: #d1d5db; --input-bg: #ffffff; }
+        .dark { --bg: #111827; --card: #1f2937; --text: #f9fafb; --border: #4b5563; --input-bg: #374151; }
         body { background-color: var(--bg); color: var(--text); font-family: sans-serif; overflow: hidden; padding-top: 10px; transition: background 0.3s; }
-        
         .tab-content { display: none; height: calc(100vh - 100px); overflow-y: auto; padding: 15px; }
         .tab-content.active { display: block; animation: fadeIn 0.2s ease-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        
-        .card { 
-            background: var(--card); 
-            border-radius: 15px; 
-            padding: 15px; 
-            margin-bottom: 12px; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
-            border: 1px solid var(--border);
-            color: var(--text);
-        }
-        
+        .card { background: var(--card); border-radius: 15px; padding: 15px; margin-bottom: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid var(--border); color: var(--text); }
         .nav-bottom { position: fixed; bottom: 0; width: 100%; background: var(--card); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid var(--border); z-index: 50; }
         .nav-item { text-align: center; font-size: 10px; color: #9ca3af; flex: 1; }
         .nav-item.active { color: #2563eb; }
-        
-        /* CORRECCIÓN CRÍTICA DE VISIBILIDAD */
-        textarea, input, select { 
-            background-color: var(--input-bg) !important; 
-            color: var(--text) !important; 
-            border: 1px solid var(--border) !important;
-            outline: none; 
-            resize: none;
-            width: 100%;
-        }
-
-        /* Marcamos específicamente el texto de los inputs para que no se pierda */
-        input::placeholder { color: #9ca3af; }
-        .dark input::placeholder { color: #6b7280; }
-
+        textarea, input, select { background-color: var(--input-bg) !important; color: var(--text) !important; border: 1px solid var(--border) !important; outline: none; resize: none; width: 100%; }
         .tipo-camion { border: 2px solid #ef4444 !important; background: #fee2e2 !important; color: #b91c1c !important; }
         .dark .tipo-camion { background: #450a0a !important; color: #fca5a5 !important; }
-        
         .badge-last { background: #3b82f6; color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: bold; }
     </style>
 </head>
@@ -72,10 +33,13 @@
     <div id="tab2" class="tab-content">
         <div class="flex justify-between items-center mb-4">
             <div>
-                <h2 class="font-bold text-blue-600">Base Grupal</h2>
-                <span class="text-[9px] bg-green-100 text-green-600 px-2 py-0.5 rounded-full font-bold">ACTIVO</span>
+                <div class="flex items-center gap-2">
+                    <h2 class="font-bold text-blue-600">Base Grupal</h2>
+                    <button onclick="fetchCloudData()" class="text-blue-400 active:rotate-180 transition-transform"><i class="fas fa-sync-alt"></i></button>
+                </div>
+                <span id="timer-sync" class="text-[9px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-bold uppercase tracking-tighter">Próxima act: 30s</span>
             </div>
-            <button id="btn-cloud" onclick="updateCloudData()" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg transition-all active:scale-95">GUARDAR NUBE</button>
+            <button id="btn-cloud" onclick="updateCloudData()" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg active:scale-95">GUARDAR NUBE</button>
         </div>
         <textarea id="base-editable" class="w-full h-[65vh] p-3 rounded-2xl text-sm font-mono" placeholder="Lista de salida..."></textarea>
     </div>
@@ -124,6 +88,7 @@
         const GID = "befb4b7fbbbd04b9406f0b0b3fe6bbfe";
         const TKN = "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";
         
+        let countdown = 30;
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         let audioHabilitado = false;
         function activarAudioSilent() { if (!audioHabilitado) audioCtx.resume().then(() => audioHabilitado = true); }
@@ -157,14 +122,35 @@
             document.getElementById('calendar-filter').value = hoy;
             document.getElementById('notas-input').value = localStorage.getItem('notas_v41') || '';
             fetchCloudData(); actualizarSelectorRutas(); render(); tick();
+            setInterval(autoUpdateTimer, 1000);
+        }
+
+        // TIMER DE ACTUALIZACIÓN AUTOMÁTICA
+        function autoUpdateTimer() {
+            if (tabActual === 2) { // Solo si está en la pestaña de Base
+                countdown--;
+                const timerEl = document.getElementById('timer-sync');
+                timerEl.innerText = `Próxima act: ${countdown}s`;
+                if (countdown <= 0) {
+                    fetchCloudData();
+                    countdown = 30;
+                }
+            }
         }
 
         async function fetchCloudData() {
+            const timerEl = document.getElementById('timer-sync');
             try {
                 const res = await fetch(`https://api.github.com/gists/${GID}`);
                 const data = await res.json();
                 document.getElementById('base-editable').value = data.files["base_logistica.txt"].content;
-            } catch (e) { console.log("Error nube"); }
+                timerEl.style.backgroundColor = "";
+                timerEl.style.color = "";
+            } catch (e) { 
+                timerEl.innerText = "Error de conexión";
+                timerEl.style.backgroundColor = "#fee2e2";
+                timerEl.style.color = "#ef4444";
+            }
         }
 
         async function updateCloudData() {
@@ -179,6 +165,7 @@
                 });
                 btn.innerText = "✓ GUARDADO";
                 btn.style.backgroundColor = "#10b981";
+                countdown = 30; // Reinicia el contador al guardar
             } catch (e) { 
                 btn.innerText = "ERROR";
                 btn.style.backgroundColor = "#ef4444";
@@ -199,6 +186,7 @@
             document.getElementById('tab'+t).classList.add('active');
             document.querySelectorAll('.nav-item')[t-1].classList.add('active');
             tabActual = t;
+            if (t === 2) countdown = 30; // Reinicia al entrar a la pestaña
         }
 
         function regPase(idx) {
