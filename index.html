@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Logística Pro V5.3 - Fix Sync</title>
+    <title>Logística Pro V5.9 - Classic Fixed</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -32,22 +32,24 @@
 
     <div id="tab2" class="tab-content">
         <div class="flex justify-between items-center mb-4">
-            <div>
-                <div class="flex items-center gap-2">
+            <div class="flex items-center gap-3">
+                <div>
                     <h2 class="font-bold text-blue-600">Base Grupal</h2>
-                    <button onclick="fetchCloudData()" class="text-blue-400 active:rotate-180 transition-transform p-1"><i class="fas fa-sync-alt"></i></button>
+                    <span id="status-cloud" class="text-[9px] bg-green-100 text-green-600 px-2 py-0.5 rounded-full font-bold uppercase">Conectado</span>
                 </div>
-                <span id="timer-sync" class="text-[9px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-bold uppercase tracking-tighter">Próxima act: 30s</span>
+                <button onclick="fetchCloudData()" class="bg-gray-100 text-blue-600 w-10 h-10 rounded-full flex items-center justify-center shadow-sm active:rotate-180 transition-transform">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
             </div>
-            <button id="btn-cloud" onclick="updateCloudData()" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg active:scale-95 transition-all">GUARDAR NUBE</button>
+            <button id="btn-cloud" onclick="updateCloudData()" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg transition-all active:scale-95">GUARDAR NUBE</button>
         </div>
-        <textarea id="base-editable" oninput="pausarTimer()" class="w-full h-[65vh] p-3 rounded-2xl text-sm font-mono" placeholder="Lista de salida..."></textarea>
+        <textarea id="base-editable" class="w-full h-[65vh] p-3 rounded-2xl text-sm font-mono border" placeholder="Cargando lista..."></textarea>
     </div>
 
     <div id="tab3" class="tab-content">
         <h2 class="font-bold mb-4 text-center uppercase text-xs text-gray-400 tracking-widest">Configuración</h2>
         <div class="flex gap-2 mb-6">
-            <input id="input-ruta" type="text" placeholder="Ej: RUTA 10" class="flex-1 p-3 rounded-xl text-sm font-bold bg-white">
+            <input id="input-ruta" type="text" placeholder="Nueva Ruta" class="flex-1 p-3 rounded-xl text-sm font-bold bg-white border">
             <button onclick="addRuta()" class="bg-green-600 text-white px-6 rounded-xl font-bold shadow-md">+</button>
         </div>
         <div class="flex items-center justify-between p-4 card mb-6">
@@ -57,9 +59,7 @@
         <div id="lista-rutas-config"></div>
     </div>
 
-    <div id="tab4" class="tab-content">
-        <div id="panel-tiempos"></div>
-    </div>
+    <div id="tab4" class="tab-content"><div id="panel-tiempos"></div></div>
 
     <div id="tab5" class="tab-content">
         <div class="flex flex-col gap-3 mb-6">
@@ -68,9 +68,8 @@
                 <button onclick="copyWA()" class="bg-green-500 text-white px-3 py-1 rounded-lg text-[10px] font-bold uppercase">WhatsApp</button>
             </div>
             <div class="grid grid-cols-2 gap-2">
-                <input type="date" id="calendar-filter" onchange="renderReportes()" class="p-2 rounded-xl text-xs font-bold outline-none bg-white">
-                <select id="ruta-filter" onchange="renderReportes()" class="p-2 rounded-xl text-xs font-bold outline-none bg-white">
-                </select>
+                <input type="date" id="calendar-filter" onchange="renderReportes()" class="p-2 rounded-xl text-xs font-bold bg-white border">
+                <select id="ruta-filter" onchange="renderReportes()" class="p-2 rounded-xl text-xs font-bold bg-white border"></select>
             </div>
         </div>
         <div id="lista-reportes" class="space-y-2 mb-20"></div>
@@ -88,16 +87,12 @@
         const GID = "befb4b7fbbbd04b9406f0b0b3fe6bbfe";
         const TKN = "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";
         
-        let countdown = 30;
-        let estaEditando = false;
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         let audioHabilitado = false;
-        
         function activarAudioSilent() { if (!audioHabilitado) audioCtx.resume().then(() => audioHabilitado = true); }
 
         function bipFuerte(tiempo) {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
             osc.connect(gain); gain.connect(audioCtx.destination);
             osc.type = 'square'; osc.frequency.setValueAtTime(1100, tiempo);
             gain.gain.setValueAtTime(0, tiempo);
@@ -110,8 +105,6 @@
             if (!audioHabilitado) return;
             const ahora = audioCtx.currentTime;
             for(let i=0; i<4; i++) bipFuerte(ahora + (i*0.25));
-            const despues = ahora + 1.5;
-            for(let i=0; i<4; i++) bipFuerte(despues + (i*0.25));
         }
 
         let rutas = JSON.parse(localStorage.getItem('rutas_v41')) || [];
@@ -124,79 +117,51 @@
             document.getElementById('calendar-filter').value = hoy;
             document.getElementById('notas-input').value = localStorage.getItem('notas_v41') || '';
             fetchCloudData(); actualizarSelectorRutas(); render(); tick();
-            setInterval(autoUpdateTimer, 1000);
-        }
-
-        function pausarTimer() {
-            estaEditando = true;
-            document.getElementById('timer-sync').innerText = "EDITANDO...";
-            document.getElementById('timer-sync').style.backgroundColor = "#fef9c3";
-            document.getElementById('timer-sync').style.color = "#a16207";
-        }
-
-        function autoUpdateTimer() {
-            if (tabActual === 2 && !estaEditando) {
-                countdown--;
-                const timerEl = document.getElementById('timer-sync');
-                timerEl.innerText = `Próxima act: ${countdown}s`;
-                if (countdown <= 0) {
-                    fetchCloudData();
-                    countdown = 30;
-                }
-            }
         }
 
         async function fetchCloudData() {
-            if (estaEditando) return; // No sobreescribir si el usuario está escribiendo
-            const timerEl = document.getElementById('timer-sync');
+            const status = document.getElementById('status-cloud');
+            status.innerText = "ACTUALIZANDO...";
             try {
-                const res = await fetch(`https://api.github.com/gists/${GID}?t=${Date.now()}`);
+                const res = await fetch(`https://api.github.com/gists/${GID}?t=${Date.now()}`, {
+                    headers: { 'Authorization': `token ${TKN}` }
+                });
                 const data = await res.json();
                 document.getElementById('base-editable').value = data.files["base_logistica.txt"].content;
-                timerEl.style.backgroundColor = "";
-                timerEl.style.color = "";
-                countdown = 30;
-            } catch (e) { 
-                timerEl.innerText = "Error conexión";
-                timerEl.style.backgroundColor = "#fee2e2";
-                timerEl.style.color = "#ef4444";
-            }
+                status.innerText = "CONECTADO";
+            } catch (e) { status.innerText = "ERROR RED"; }
         }
 
         async function updateCloudData() {
             const btn = document.getElementById('btn-cloud');
-            const content = document.getElementById('base-editable').value;
-            btn.disabled = true; 
-            btn.innerText = "ENVIANDO...";
-            btn.style.backgroundColor = "#fbbf24";
-            
+            const contentTxt = document.getElementById('base-editable').value;
+            btn.disabled = true; btn.innerText = "ENVIANDO...";
             try {
-                const response = await fetch(`https://api.github.com/gists/${GID}`, {
+                const res = await fetch(`https://api.github.com/gists/${GID}`, {
                     method: 'PATCH',
-                    headers: { 'Authorization': `token ${TKN}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ files: { "base_logistica.txt": { content } } })
+                    headers: { 
+                        'Authorization': `token ${TKN}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ files: { "base_logistica.txt": { content: contentTxt } } })
                 });
-                
-                if(response.ok) {
+                if(res.ok) {
                     btn.innerText = "✓ GUARDADO";
                     btn.style.backgroundColor = "#10b981";
-                    estaEditando = false;
-                    countdown = 30;
                 } else { throw new Error(); }
             } catch (e) { 
                 btn.innerText = "ERROR";
                 btn.style.backgroundColor = "#ef4444";
             } finally {
                 setTimeout(() => {
-                    btn.disabled = false; 
-                    btn.innerText = "GUARDAR NUBE";
+                    btn.disabled = false; btn.innerText = "GUARDAR NUBE";
                     btn.style.backgroundColor = "";
-                }, 2500);
+                }, 2000);
             }
         }
 
         function getFechaLocal() { return new Date().toISOString().split('T')[0]; }
-
         function go(t) {
             activarAudioSilent();
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -204,7 +169,7 @@
             document.getElementById('tab'+t).classList.add('active');
             document.querySelectorAll('.nav-item')[t-1].classList.add('active');
             tabActual = t;
-            if (t === 2) { estaEditando = false; countdown = 30; }
+            if(t === 2) fetchCloudData();
         }
 
         function regPase(idx) {
@@ -217,37 +182,25 @@
         }
 
         function eliminarRutaCompleta(idx) {
-            if(confirm(`¿Eliminar ruta?`)) {
-                const nombreRuta = rutas[idx].n;
-                rutas.splice(idx, 1);
-                Object.keys(historial).forEach(fecha => {
-                    historial[fecha] = historial[fecha].filter(reg => reg.ruta !== nombreRuta);
-                });
-                save(); actualizarSelectorRutas();
-            }
+            if(confirm(`¿Eliminar ruta?`)) { rutas.splice(idx, 1); save(); }
         }
 
         function undo(idxGlobal) {
             const fecha = document.getElementById('calendar-filter').value;
-            if(confirm("¿Eliminar registro?")) {
-                historial[fecha].splice(idxGlobal, 1);
-                save();
-            }
+            if(confirm("¿Eliminar?")) { historial[fecha].splice(idxGlobal, 1); save(); }
         }
 
         function actualizarSelectorRutas() {
             const sel = document.getElementById('ruta-filter');
             if (rutas.length === 0) { sel.innerHTML = '<option value="">Sin rutas</option>'; return; }
-            const actual = sel.value;
             sel.innerHTML = rutas.map(r => `<option value="${r.n}">${r.n}</option>`).join('');
-            if (actual && rutas.find(r => r.n === actual)) sel.value = actual;
         }
 
         function render() {
             actualizarSelectorRutas();
             document.getElementById('lista-rutas-config').innerHTML = rutas.map((r,i) => `
-                <div class="card flex flex-col gap-2">
-                    <div class="flex justify-between font-bold text-blue-600"><span>${r.n}</span><button onclick="eliminarRutaCompleta(${i})" class="text-red-400"><i class="fas fa-trash-alt"></i></button></div>
+                <div class="card p-4 flex flex-col gap-2">
+                    <div class="flex justify-between font-bold text-blue-600 uppercase"><span>${r.n}</span><button onclick="eliminarRutaCompleta(${i})" class="text-red-400"><i class="fas fa-trash-alt"></i></button></div>
                     <div class="flex items-center gap-3 text-xs">
                         Alarma: <input type="number" value="${r.alarm}" onchange="rutas[${i}].alarm=this.value;save()" class="w-12 border rounded px-1 text-center font-bold"> min
                         <button onclick="rutas[${i}].on=!rutas[${i}].on;save()" class="ml-auto text-lg ${r.on?'text-blue-500':'text-gray-300'}"><i class="fas ${r.on?'fa-bell':'fa-bell-slash'}"></i></button>
@@ -260,18 +213,16 @@
                 let last = regsRuta[regsRuta.length - 1];
                 let css = (last && last.tipo === 'Camión') ? 'tipo-camion' : '';
                 return `
-                    <div class="card ${css}">
+                    <div class="card p-4 ${css}">
                         <div class="flex justify-between items-start mb-4">
                             <div><span class="font-black text-xl uppercase">${r.n}</span>
                             ${last ? `<div class="mt-1"><span class="badge-last">#${last.unidad}</span></div>` : ''}</div>
                             <span class="cronos font-mono text-3xl font-black" data-last="${last?last.time:''}" data-alarm="${r.alarm}" data-on="${r.on}">--:--</span>
                         </div>
                         <div class="flex gap-2">
-                            <input id="unit-${i}" type="number" placeholder="ID" class="w-20 p-3 rounded-xl text-sm font-bold">
-                            <select id="tipo-${i}" class="flex-1 p-3 rounded-xl text-xs font-bold">
-                                <option>Combi</option> <option>Camión</option>
-                            </select>
-                            <button onclick="regPase(${i})" class="bg-blue-600 text-white px-6 rounded-xl font-bold shadow-lg">OK</button>
+                            <input id="unit-${i}" type="number" placeholder="ID" class="w-20 p-3 rounded-xl text-sm font-bold border">
+                            <select id="tipo-${i}" class="flex-1 p-3 rounded-xl text-xs font-bold border"><option>Combi</option><option>Camión</option></select>
+                            <button onclick="regPase(${i})" class="bg-blue-600 text-white px-6 rounded-xl font-bold">OK</button>
                         </div>
                     </div>
                 `;
@@ -288,18 +239,16 @@
             if (regsFiltrados.length > 0) {
                 h += `<div class="mb-4 text-center"><h3 class="font-black text-blue-600 text-[10px] uppercase tracking-[3px]">${rutaSel}</h3></div>`;
                 regsFiltrados.slice().reverse().forEach((r) => {
-                    const idxEnFiltrados = regsFiltrados.indexOf(r);
-                    const ant = regsFiltrados[idxEnFiltrados - 1];
+                    const ant = regsFiltrados[regsFiltrados.indexOf(r) - 1];
                     let freq = ant ? Math.floor((r.time - ant.time)/60000) + "m" : "Ini";
                     h += `<div class="card p-4 flex justify-between items-center text-[11px]">
-                        <div><span class="font-black text-blue-600 text-sm">#${r.unidad}</span> 
-                        <span class="mx-2 opacity-20">|</span> <b>${new Date(r.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</b>
+                        <div><span class="font-black text-blue-600 text-sm">#${r.unidad}</span> | <b>${new Date(r.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</b>
                         <div class="mt-1 opacity-50 font-bold uppercase text-[9px]">Freq: ${freq} | ${r.tipo}</div></div>
                         <button onclick="undo(${r.originalIdx})" class="text-gray-300 p-2"><i class="fas fa-undo-alt"></i></button>
                     </div>`;
                 });
             }
-            document.getElementById('lista-reportes').innerHTML = h || `<p class='text-center opacity-30 mt-20 text-[10px] font-bold'>SIN DATOS</p>`;
+            document.getElementById('lista-reportes').innerHTML = h || `<p class='text-center opacity-30 mt-20 text-[10px] font-bold uppercase'>Sin Datos</p>`;
         }
 
         function tick() {
@@ -323,10 +272,7 @@
 
         function addRuta() {
             let n = document.getElementById('input-ruta').value;
-            if(n) { 
-                rutas.push({n: n.toUpperCase(), alarm: 15, on: true}); 
-                save(); document.getElementById('input-ruta').value=''; actualizarSelectorRutas();
-            }
+            if(n) { rutas.push({n: n.toUpperCase(), alarm: 15, on: true}); save(); document.getElementById('input-ruta').value=''; }
         }
 
         function copyWA() {
@@ -335,8 +281,7 @@
                 const regsRuta = (historial[document.getElementById('calendar-filter').value] || []).filter(r => r.ruta === ruta.n);
                 if(regsRuta.length > 0) {
                     t += `*[${ruta.n}]*\n`;
-                    regsRuta.forEach(r => t += `• #${r.unidad} - ${new Date(r.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} (${r.tipo})\n`);
-                    t += `\n`;
+                    regsRuta.forEach(r => t += `• #${r.unidad} - ${new Date(r.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}\n`);
                 }
             });
             navigator.clipboard.writeText(t); alert("Copiado");
