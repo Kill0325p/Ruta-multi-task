@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Logística Pro V5.1 - Full Light Fix</title>
+    <title>Logística Pro V5.2 - Fix Total</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -42,7 +42,6 @@
         .nav-item { text-align: center; font-size: 10px; color: #9ca3af; flex: 1; }
         .nav-item.active { color: #2563eb; }
         
-        /* CORRECCIÓN CRÍTICA DE VISIBILIDAD */
         textarea, input, select { 
             background-color: var(--input-bg) !important; 
             color: var(--text) !important; 
@@ -52,7 +51,6 @@
             width: 100%;
         }
 
-        /* Marcamos específicamente el texto de los inputs para que no se pierda */
         input::placeholder { color: #9ca3af; }
         .dark input::placeholder { color: #6b7280; }
 
@@ -122,75 +120,102 @@
 
     <script>
         const GID = "befb4b7fbbbd04b9406f0b0b3fe6bbfe";
-        const TKN = "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";
+        let TKN = localStorage.getItem('logistica_token') || "";
         
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         let audioHabilitado = false;
-        function activarAudioSilent() { if (!audioHabilitado) audioCtx.resume().then(() => audioHabilitado = true); }
+
+        function activarAudioSilent() { 
+            if (!audioHabilitado && audioCtx.state === 'suspended') {
+                audioCtx.resume().then(() => audioHabilitado = true);
+            }
+        }
 
         function bipFuerte(tiempo) {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.type = 'square'; osc.frequency.setValueAtTime(1100, tiempo);
-            gain.gain.setValueAtTime(0, tiempo);
-            gain.gain.linearRampToValueAtTime(0.9, tiempo + 0.02);
-            gain.gain.linearRampToValueAtTime(0, tiempo + 0.18);
-            osc.start(tiempo); osc.stop(tiempo + 0.2);
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.type = 'square'; osc.frequency.setValueAtTime(1100, tiempo);
+                gain.gain.setValueAtTime(0, tiempo);
+                gain.gain.linearRampToValueAtTime(0.9, tiempo + 0.02);
+                gain.gain.linearRampToValueAtTime(0, tiempo + 0.18);
+                osc.start(tiempo); osc.stop(tiempo + 0.2);
+            } catch(e) {}
         }
 
         function sonarPatronAlarma() {
             if (!audioHabilitado) return;
             const ahora = audioCtx.currentTime;
             for(let i=0; i<4; i++) bipFuerte(ahora + (i*0.25));
-            const despues = ahora + 1.5;
-            for(let i=0; i<4; i++) bipFuerte(despues + (i*0.25));
         }
 
         let rutas = JSON.parse(localStorage.getItem('rutas_v41')) || [];
         let historial = JSON.parse(localStorage.getItem('historial_v41')) || {};
         let tabActual = 1;
 
+        function getFechaLocal() { return new Date().toISOString().split('T')[0]; }
+
+        function save() {
+            localStorage.setItem('rutas_v41', JSON.stringify(rutas));
+            localStorage.setItem('historial_v41', JSON.stringify(historial));
+            render();
+        }
+
         function init() {
             const hoy = getFechaLocal();
             if (!historial[hoy]) historial[hoy] = [];
             document.getElementById('calendar-filter').value = hoy;
             document.getElementById('notas-input').value = localStorage.getItem('notas_v41') || '';
-            fetchCloudData(); actualizarSelectorRutas(); render(); tick();
+            fetchCloudData(); 
+            render(); 
+            tick();
         }
 
         async function fetchCloudData() {
             try {
                 const res = await fetch(`https://api.github.com/gists/${GID}`);
                 const data = await res.json();
-                document.getElementById('base-editable').value = data.files["base_logistica.txt"].content;
-            } catch (e) { console.log("Error nube"); }
+                if(data.files && data.files["base_logistica.txt"]) {
+                    document.getElementById('base-editable').value = data.files["base_logistica.txt"].content;
+                }
+            } catch (e) { console.log("Error al cargar nube"); }
         }
 
         async function updateCloudData() {
+            if (!TKN) {
+                const userToken = prompt("Pega tu Token de GitHub:");
+                if (userToken) {
+                    TKN = userToken.trim();
+                    localStorage.setItem('logistica_token', TKN);
+                } else return;
+            }
+
             const btn = document.getElementById('btn-cloud');
             const content = document.getElementById('base-editable').value;
             btn.disabled = true; btn.innerText = "ESPERE...";
+            
             try {
-                await fetch(`https://api.github.com/gists/${GID}`, {
+                const response = await fetch(`https://api.github.com/gists/${GID}`, {
                     method: 'PATCH',
-                    headers: { 'Authorization': `token ${TKN}` },
+                    headers: { 'Authorization': `token ${TKN}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({ files: { "base_logistica.txt": { content } } })
                 });
+
+                if (response.status === 401) {
+                    alert("Token inválido.");
+                    localStorage.removeItem('logistica_token'); TKN = "";
+                    throw new Error();
+                }
                 btn.innerText = "✓ GUARDADO";
                 btn.style.backgroundColor = "#10b981";
             } catch (e) { 
                 btn.innerText = "ERROR";
                 btn.style.backgroundColor = "#ef4444";
             } finally {
-                setTimeout(() => {
-                    btn.disabled = false; btn.innerText = "GUARDAR NUBE";
-                    btn.style.backgroundColor = "";
-                }, 2000);
+                setTimeout(() => { btn.disabled = false; btn.innerText = "GUARDAR NUBE"; btn.style.backgroundColor = ""; }, 2000);
             }
         }
-
-        function getFechaLocal() { return new Date().toISOString().split('T')[0]; }
 
         function go(t) {
             activarAudioSilent();
@@ -199,26 +224,25 @@
             document.getElementById('tab'+t).classList.add('active');
             document.querySelectorAll('.nav-item')[t-1].classList.add('active');
             tabActual = t;
+            if(t === 4 || t === 5) render();
+        }
+
+        function addRuta() {
+            let n = document.getElementById('input-ruta').value;
+            if(n) { 
+                rutas.push({n: n.toUpperCase(), alarm: 15, on: true}); 
+                document.getElementById('input-ruta').value=''; 
+                save(); 
+            }
         }
 
         function regPase(idx) {
-            activarAudioSilent();
             let unidad = document.getElementById(`unit-${idx}`).value;
             let tipo = document.getElementById(`tipo-${idx}`).value;
             if(!unidad) return alert("Falta #");
             historial[getFechaLocal()].push({ ruta: rutas[idx].n, unidad, tipo, time: Date.now() });
-            save(); document.getElementById(`unit-${idx}`).value = '';
-        }
-
-        function eliminarRutaCompleta(idx) {
-            if(confirm(`¿Eliminar permanentemente?`)) {
-                const nombreRuta = rutas[idx].n;
-                rutas.splice(idx, 1);
-                Object.keys(historial).forEach(fecha => {
-                    historial[fecha] = historial[fecha].filter(reg => reg.ruta !== nombreRuta);
-                });
-                save(); actualizarSelectorRutas();
-            }
+            document.getElementById(`unit-${idx}`).value = '';
+            save();
         }
 
         function undo(idxGlobal) {
@@ -229,32 +253,25 @@
             }
         }
 
-        function actualizarSelectorRutas() {
-            const sel = document.getElementById('ruta-filter');
-            if (rutas.length === 0) { sel.innerHTML = '<option value="">Sin rutas</option>'; return; }
-            const actual = sel.value;
-            sel.innerHTML = rutas.map(r => `<option value="${r.n}">${r.n}</option>`).join('');
-            if (actual && rutas.find(r => r.n === actual)) sel.value = actual;
-        }
-
         function render() {
-            actualizarSelectorRutas();
+            // Ajustes
             document.getElementById('lista-rutas-config').innerHTML = rutas.map((r,i) => `
                 <div class="card flex flex-col gap-2">
-                    <div class="flex justify-between font-bold text-blue-600"><span>${r.n}</span><button onclick="eliminarRutaCompleta(${i})" class="text-red-400"><i class="fas fa-trash-alt"></i></button></div>
+                    <div class="flex justify-between font-bold text-blue-600"><span>${r.n}</span>
+                    <button onclick="rutas.splice(${i},1);save()" class="text-red-400"><i class="fas fa-trash-alt"></i></button></div>
                     <div class="flex items-center gap-3 text-xs">
-                        Alarma: <input type="number" value="${r.alarm}" onchange="rutas[${i}].alarm=this.value;save()" class="w-12 border rounded px-1 text-center font-bold"> min
+                        Alarma: <input type="number" value="${r.alarm}" onchange="rutas[${i}].alarm=parseInt(this.value);save()" class="w-12 border rounded px-1 text-center font-bold"> min
                         <button onclick="rutas[${i}].on=!rutas[${i}].on;save()" class="ml-auto text-lg ${r.on?'text-blue-500':'text-gray-300'}"><i class="fas ${r.on?'fa-bell':'fa-bell-slash'}"></i></button>
                     </div>
                 </div>
             `).join('');
 
+            // Tiempos
             document.getElementById('panel-tiempos').innerHTML = rutas.map((r,i) => {
                 let regsRuta = (historial[getFechaLocal()] || []).filter(x => x.ruta === r.n);
                 let last = regsRuta[regsRuta.length - 1];
-                let css = (last && last.tipo === 'Camión') ? 'tipo-camion' : '';
                 return `
-                    <div class="card ${css}">
+                    <div class="card ${last && last.tipo === 'Camión' ? 'tipo-camion' : ''}">
                         <div class="flex justify-between items-start mb-4">
                             <div><span class="font-black text-xl uppercase">${r.n}</span>
                             ${last ? `<div class="mt-1"><span class="badge-last">#${last.unidad}</span></div>` : ''}</div>
@@ -262,75 +279,53 @@
                         </div>
                         <div class="flex gap-2">
                             <input id="unit-${i}" type="number" placeholder="ID" class="w-20 p-3 rounded-xl text-sm font-bold">
-                            <select id="tipo-${i}" class="flex-1 p-3 rounded-xl text-xs font-bold">
-                                <option>Combi</option> <option>Camión</option>
-                            </select>
+                            <select id="tipo-${i}" class="flex-1 p-3 rounded-xl text-xs font-bold"><option>Combi</option><option>Camión</option></select>
                             <button onclick="regPase(${i})" class="bg-blue-600 text-white px-6 rounded-xl font-bold shadow-lg">OK</button>
                         </div>
                     </div>
                 `;
             }).join('');
-            renderReportes();
-        }
 
-        function renderReportes() {
+            // Reporte
+            const selRuta = document.getElementById('ruta-filter');
+            const prevVal = selRuta.value;
+            selRuta.innerHTML = rutas.map(r => `<option value="${r.n}">${r.n}</option>`).join('');
+            if(prevVal) selRuta.value = prevVal;
+
             const fecha = document.getElementById('calendar-filter').value;
-            const rutaSel = document.getElementById('ruta-filter').value;
-            const regsGlobal = historial[fecha] || [];
-            const regsFiltrados = regsGlobal.map((r, i) => ({ ...r, originalIdx: i })).filter(r => r.ruta === rutaSel);
-            let h = '';
-            if (regsFiltrados.length > 0) {
-                h += `<div class="mb-4 text-center"><h3 class="font-black text-blue-600 text-[10px] uppercase tracking-[3px]">${rutaSel}</h3></div>`;
-                regsFiltrados.slice().reverse().forEach((r) => {
-                    const idxEnFiltrados = regsFiltrados.indexOf(r);
-                    const ant = regsFiltrados[idxEnFiltrados - 1];
-                    let freq = ant ? Math.floor((r.time - ant.time)/60000) + "m" : "Ini";
-                    h += `<div class="card p-4 flex justify-between items-center text-[11px]">
-                        <div><span class="font-black text-blue-600 text-sm">#${r.unidad}</span> 
-                        <span class="mx-2 opacity-20">|</span> <b>${new Date(r.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</b>
-                        <div class="mt-1 opacity-50 font-bold uppercase text-[9px]">Freq: ${freq} | ${r.tipo}</div></div>
-                        <button onclick="undo(${r.originalIdx})" class="text-gray-300 p-2"><i class="fas fa-undo-alt"></i></button>
-                    </div>`;
-                });
-            }
-            document.getElementById('lista-reportes').innerHTML = h || `<p class='text-center opacity-30 mt-20 text-[10px] font-bold'>SIN DATOS</p>`;
+            const regsFiltrados = (historial[fecha] || []).map((r, i) => ({ ...r, originalIdx: i })).filter(r => r.ruta === selRuta.value);
+            
+            document.getElementById('lista-reportes').innerHTML = regsFiltrados.reverse().map((r, i, arr) => {
+                const ant = arr[i+1];
+                const freq = ant ? Math.floor((r.time - ant.time)/60000)+"m" : "---";
+                return `<div class="card p-4 flex justify-between items-center text-[11px]">
+                    <div><span class="font-black text-blue-600 text-sm">#${r.unidad}</span> | <b>${new Date(r.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</b>
+                    <div class="mt-1 opacity-50 font-bold uppercase text-[9px]">Freq: ${freq} | ${r.tipo}</div></div>
+                    <button onclick="undo(${r.originalIdx})" class="text-gray-300 p-2"><i class="fas fa-undo-alt"></i></button>
+                </div>`;
+            }).join('') || "<p class='text-center opacity-30 mt-20 text-[10px] font-bold'>SIN DATOS</p>";
         }
 
         function tick() {
             document.querySelectorAll('.cronos').forEach(el => {
-                let last = el.dataset.last; if(!last) { el.innerText = "00:00"; return; }
+                let last = el.dataset.last; if(!last) return el.innerText = "00:00";
                 let diff = Math.floor((Date.now() - last)/1000);
                 let m = Math.floor(diff/60); let s = diff % 60;
                 el.innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
-                if(el.dataset.on === 'true' && m >= el.dataset.alarm) {
-                    el.style.color = '#ef4444'; if (s === 0) sonarPatronAlarma();
-                } else { el.style.color = ''; }
+                if(el.dataset.on === 'true' && m >= parseInt(el.dataset.alarm)) {
+                    el.style.color = '#ef4444'; if(s === 0) sonarPatronAlarma();
+                } else el.style.color = '';
             });
             setTimeout(tick, 1000);
         }
 
-        function save() {
-            localStorage.setItem('rutas_v41', JSON.stringify(rutas));
-            localStorage.setItem('historial_v41', JSON.stringify(historial));
-            render();
-        }
-
-        function addRuta() {
-            let n = document.getElementById('input-ruta').value;
-            if(n) { 
-                rutas.push({n: n.toUpperCase(), alarm: 15, on: true}); 
-                save(); document.getElementById('input-ruta').value=''; actualizarSelectorRutas();
-            }
-        }
-
         function copyWA() {
-            let t = `*REPORTE LOGÍSTICA ${document.getElementById('calendar-filter').value}*\n\n`;
+            const fecha = document.getElementById('calendar-filter').value;
+            let t = `*REPORTE LOGÍSTICA ${fecha}*\n\n`;
             rutas.forEach(ruta => {
-                const regsRuta = (historial[document.getElementById('calendar-filter').value] || []).filter(r => r.ruta === ruta.n);
-                if(regsRuta.length > 0) {
-                    t += `*[${ruta.n}]*\n`;
-                    regsRuta.forEach(r => t += `• #${r.unidad} - ${new Date(r.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} (${r.tipo})\n`);
-                    t += `\n`;
+                const regs = (historial[fecha] || []).filter(r => r.ruta === ruta.n);
+                if(regs.length) {
+                    t += `*[${ruta.n}]*\n` + regs.map(r => `• #${r.unidad} - ${new Date(r.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}`).join('\n') + '\n\n';
                 }
             });
             navigator.clipboard.writeText(t); alert("Copiado");
@@ -339,7 +334,6 @@
         let startX = 0;
         document.addEventListener('touchstart', e => startX = e.touches[0].clientX);
         document.addEventListener('touchend', e => {
-            activarAudioSilent();
             let diff = startX - e.changedTouches[0].clientX;
             if(Math.abs(diff) > 80) {
                 if(diff > 0 && tabActual < 5) go(tabActual+1);
