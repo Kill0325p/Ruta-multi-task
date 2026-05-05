@@ -3,60 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Logística Pro V5.2 - Final Fix</title>
+    <title>Logística Pro V5.5 - Cloud Fix</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { 
-            --bg: #f3f4f6; 
-            --card: #ffffff; 
-            --text: #1f2937; 
-            --border: #d1d5db;
-            --input-bg: #ffffff;
-        }
-        .dark { 
-            --bg: #111827; 
-            --card: #1f2937; 
-            --text: #f9fafb; 
-            --border: #4b5563;
-            --input-bg: #374151;
-        }
+        :root { --bg: #f3f4f6; --card: #ffffff; --text: #1f2937; --border: #d1d5db; --input-bg: #ffffff; }
+        .dark { --bg: #111827; --card: #1f2937; --text: #f9fafb; --border: #4b5563; --input-bg: #374151; }
         
         body { background-color: var(--bg); color: var(--text); font-family: sans-serif; overflow: hidden; padding-top: 10px; transition: background 0.3s; }
-        
         .tab-content { display: none; height: calc(100vh - 100px); overflow-y: auto; padding: 15px; }
         .tab-content.active { display: block; animation: fadeIn 0.2s ease-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         
-        .card { 
-            background: var(--card); 
-            border-radius: 15px; 
-            padding: 15px; 
-            margin-bottom: 12px; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
-            border: 1px solid var(--border);
-            color: var(--text);
-        }
-        
+        .card { background: var(--card); border-radius: 15px; padding: 15px; margin-bottom: 12px; border: 1px solid var(--border); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .nav-bottom { position: fixed; bottom: 0; width: 100%; background: var(--card); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid var(--border); z-index: 50; }
         .nav-item { text-align: center; font-size: 10px; color: #9ca3af; flex: 1; }
         .nav-item.active { color: #2563eb; }
         
-        textarea, input, select { 
-            background-color: var(--input-bg) !important; 
-            color: var(--text) !important; 
-            border: 1px solid var(--border) !important;
-            outline: none; 
-            resize: none;
-            width: 100%;
-        }
-
-        input::placeholder { color: #9ca3af; }
-        .dark input::placeholder { color: #6b7280; }
-
+        textarea, input, select { background-color: var(--input-bg) !important; color: var(--text) !important; border: 1px solid var(--border) !important; outline: none; resize: none; width: 100%; }
         .tipo-camion { border: 2px solid #ef4444 !important; background: #fee2e2 !important; color: #b91c1c !important; }
         .dark .tipo-camion { background: #450a0a !important; color: #fca5a5 !important; }
-        
         .badge-last { background: #3b82f6; color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: bold; }
     </style>
 </head>
@@ -64,7 +30,7 @@
 
     <div id="tab1" class="tab-content active">
         <h2 class="font-bold mb-3 text-blue-500 uppercase text-xs tracking-widest text-center">Bloc de Notas</h2>
-        <textarea id="notas-input" class="w-full h-[70vh] p-4 rounded-2xl text-sm shadow-inner" placeholder="Escribe aquí..."></textarea>
+        <textarea id="notas-input" class="w-full h-[70vh] p-4 rounded-2xl text-sm" placeholder="Escribe aquí..."></textarea>
     </div>
 
     <div id="tab2" class="tab-content">
@@ -72,7 +38,7 @@
             <div class="flex items-center gap-2">
                 <div>
                     <h2 class="font-bold text-blue-600">Base Grupal</h2>
-                    <span id="cloud-status" class="text-[9px] bg-green-100 text-green-600 px-2 py-0.5 rounded-full font-bold">ACTIVO</span>
+                    <span id="cloud-status" class="text-[9px] bg-green-100 text-green-600 px-2 py-0.5 rounded-full font-bold">CONECTADO</span>
                 </div>
                 <button onclick="fetchCloudData()" class="bg-gray-100 dark:bg-gray-700 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center active:rotate-180 transition-transform">
                     <i class="fas fa-sync-alt text-xs"></i>
@@ -80,14 +46,14 @@
             </div>
             <button id="btn-cloud" onclick="updateCloudData()" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg transition-all active:scale-95">GUARDAR NUBE</button>
         </div>
-        <textarea id="base-editable" class="w-full h-[65vh] p-3 rounded-2xl text-sm font-mono" placeholder="Lista de salida..."></textarea>
+        <textarea id="base-editable" class="w-full h-[65vh] p-3 rounded-2xl text-sm font-mono" placeholder="Cargando base de datos..."></textarea>
     </div>
 
     <div id="tab3" class="tab-content">
-        <h2 class="font-bold mb-4 text-center uppercase text-xs text-gray-400 tracking-widest">Configuración</h2>
+        <h2 class="font-bold mb-4 text-center uppercase text-xs text-gray-400">Configuración</h2>
         <div class="flex gap-2 mb-6">
-            <input id="input-ruta" type="text" placeholder="Ej: RUTA 10" class="flex-1 p-3 rounded-xl text-sm font-bold bg-white">
-            <button onclick="addRuta()" class="bg-green-600 text-white px-6 rounded-xl font-bold shadow-md">+</button>
+            <input id="input-ruta" type="text" placeholder="Nueva Ruta" class="flex-1 p-3 rounded-xl">
+            <button onclick="addRuta()" class="bg-green-600 text-white px-6 rounded-xl font-bold">+</button>
         </div>
         <div class="flex items-center justify-between p-4 card mb-6">
             <span class="text-sm font-bold uppercase">Modo Nocturno</span>
@@ -96,19 +62,17 @@
         <div id="lista-rutas-config"></div>
     </div>
 
-    <div id="tab4" class="tab-content">
-        <div id="panel-tiempos"></div>
-    </div>
+    <div id="tab4" class="tab-content"><div id="panel-tiempos"></div></div>
 
     <div id="tab5" class="tab-content">
         <div class="flex flex-col gap-3 mb-6">
             <div class="flex justify-between items-center">
                 <h2 class="font-bold text-blue-600 uppercase text-xs">Historial</h2>
-                <button onclick="copyWA()" class="bg-green-500 text-white px-3 py-1 rounded-lg text-[10px] font-bold uppercase">WhatsApp</button>
+                <button onclick="copyWA()" class="bg-green-500 text-white px-3 py-1 rounded-lg text-[10px] font-bold">WhatsApp</button>
             </div>
             <div class="grid grid-cols-2 gap-2">
-                <input type="date" id="calendar-filter" onchange="renderReportes()" class="p-2 rounded-xl text-xs font-bold outline-none bg-white">
-                <select id="ruta-filter" onchange="renderReportes()" class="p-2 rounded-xl text-xs font-bold outline-none bg-white"></select>
+                <input type="date" id="calendar-filter" onchange="renderReportes()" class="p-2 rounded-xl text-xs font-bold bg-white">
+                <select id="ruta-filter" onchange="renderReportes()" class="p-2 rounded-xl text-xs font-bold bg-white"></select>
             </div>
         </div>
         <div id="lista-reportes" class="space-y-2 mb-20"></div>
@@ -124,40 +88,30 @@
 
     <script>
         const GID = "befb4b7fbbbd04b9406f0b0b3fe6bbfe";
-        const TKN = "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";
+        const TKN = "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";
         
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         let audioHabilitado = false;
         function activarAudioSilent() { if (!audioHabilitado) audioCtx.resume().then(() => audioHabilitado = true); }
 
-        function bipFuerte(tiempo) {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.type = 'square'; osc.frequency.setValueAtTime(1100, tiempo);
-            gain.gain.setValueAtTime(0, tiempo);
-            gain.gain.linearRampToValueAtTime(0.9, tiempo + 0.02);
-            gain.gain.linearRampToValueAtTime(0, tiempo + 0.18);
-            osc.start(tiempo); osc.stop(tiempo + 0.2);
-        }
-
         function sonarPatronAlarma() {
             if (!audioHabilitado) return;
             const ahora = audioCtx.currentTime;
-            for(let i=0; i<4; i++) bipFuerte(ahora + (i*0.25));
-            const despues = ahora + 1.5;
-            for(let i=0; i<4; i++) bipFuerte(despues + (i*0.25));
+            for(let i=0; i<4; i++) {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.frequency.setValueAtTime(1100, ahora + (i*0.25));
+                gain.gain.setValueAtTime(0, ahora + (i*0.25));
+                gain.gain.linearRampToValueAtTime(0.5, ahora + (i*0.25) + 0.05);
+                gain.gain.linearRampToValueAtTime(0, ahora + (i*0.25) + 0.2);
+                osc.start(ahora + (i*0.25)); osc.stop(ahora + (i*0.25) + 0.2);
+            }
         }
 
         let rutas = JSON.parse(localStorage.getItem('rutas_v41')) || [];
         let historial = JSON.parse(localStorage.getItem('historial_v41')) || {};
         let tabActual = 1;
-
-        // --- MEMORIA DE MODO NOCTURNO ---
-        function toggleDarkMode() {
-            const isDark = document.body.classList.toggle('dark');
-            localStorage.setItem('tema_oscuro', isDark);
-        }
 
         function init() {
             const hoy = getFechaLocal();
@@ -165,12 +119,11 @@
             document.getElementById('calendar-filter').value = hoy;
             document.getElementById('notas-input').value = localStorage.getItem('notas_v41') || '';
             
-            // Cargar tema guardado
             if (localStorage.getItem('tema_oscuro') === 'true') {
                 document.body.classList.add('dark');
                 document.getElementById('dark-toggle').checked = true;
             }
-
+            
             fetchCloudData(); actualizarSelectorRutas(); render(); tick();
         }
 
@@ -180,7 +133,8 @@
             try {
                 const res = await fetch(`https://api.github.com/gists/${GID}?t=${Date.now()}`);
                 const data = await res.json();
-                document.getElementById('base-editable').value = data.files["base_logistica.txt"].content;
+                const content = data.files["base_logistica.txt"].content;
+                document.getElementById('base-editable').value = content;
                 status.innerText = "ACTIVO";
             } catch (e) { status.innerText = "ERROR"; }
         }
@@ -188,17 +142,21 @@
         async function updateCloudData() {
             const btn = document.getElementById('btn-cloud');
             const content = document.getElementById('base-editable').value;
-            btn.disabled = true; btn.innerText = "ESPERE...";
+            btn.disabled = true; btn.innerText = "GUARDANDO...";
+
             try {
-                await fetch(`https://api.github.com/gists/${GID}`, {
+                const res = await fetch(`https://api.github.com/gists/${GID}`, {
                     method: 'PATCH',
-                    headers: { 'Authorization': `token ${TKN}` },
+                    headers: { 'Authorization': `token ${TKN}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({ files: { "base_logistica.txt": { content } } })
                 });
-                btn.innerText = "✓ GUARDADO";
-                btn.style.backgroundColor = "#10b981";
-            } catch (e) { 
-                btn.innerText = "ERROR";
+
+                if (res.ok) {
+                    btn.innerText = "✓ GUARDADO";
+                    btn.style.backgroundColor = "#10b981";
+                } else { throw new Error(); }
+            } catch (e) {
+                btn.innerText = "ERROR TOKEN";
                 btn.style.backgroundColor = "#ef4444";
             } finally {
                 setTimeout(() => {
@@ -208,10 +166,14 @@
             }
         }
 
+        function toggleDarkMode() {
+            const isDark = document.body.classList.toggle('dark');
+            localStorage.setItem('tema_oscuro', isDark);
+        }
+
         function getFechaLocal() { return new Date().toISOString().split('T')[0]; }
 
         function go(t) {
-            activarAudioSilent();
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             document.getElementById('tab'+t).classList.add('active');
@@ -219,49 +181,29 @@
             tabActual = t;
         }
 
+        function save() {
+            localStorage.setItem('rutas_v41', JSON.stringify(rutas));
+            localStorage.setItem('historial_v41', JSON.stringify(historial));
+            render();
+        }
+
         function regPase(idx) {
-            activarAudioSilent();
             let unidad = document.getElementById(`unit-${idx}`).value;
             let tipo = document.getElementById(`tipo-${idx}`).value;
-            if(!unidad) return alert("Falta #");
-            historial[getFechaLocal()].push({ ruta: rutas[idx].n, unidad, tipo, time: Date.now() });
+            if(!unidad) return;
+            const hoy = getFechaLocal();
+            if(!historial[hoy]) historial[hoy] = [];
+            historial[hoy].push({ ruta: rutas[idx].n, unidad, tipo, time: Date.now() });
             save(); document.getElementById(`unit-${idx}`).value = '';
-        }
-
-        function eliminarRutaCompleta(idx) {
-            if(confirm(`¿Eliminar permanentemente?`)) {
-                const nombreRuta = rutas[idx].n;
-                rutas.splice(idx, 1);
-                Object.keys(historial).forEach(fecha => {
-                    historial[fecha] = historial[fecha].filter(reg => reg.ruta !== nombreRuta);
-                });
-                save(); actualizarSelectorRutas();
-            }
-        }
-
-        function undo(idxGlobal) {
-            const fecha = document.getElementById('calendar-filter').value;
-            if(confirm("¿Eliminar registro?")) {
-                historial[fecha].splice(idxGlobal, 1);
-                save();
-            }
-        }
-
-        function actualizarSelectorRutas() {
-            const sel = document.getElementById('ruta-filter');
-            if (rutas.length === 0) { sel.innerHTML = '<option value="">Sin rutas</option>'; return; }
-            const actual = sel.value;
-            sel.innerHTML = rutas.map(r => `<option value="${r.n}">${r.n}</option>`).join('');
-            if (actual && rutas.find(r => r.n === actual)) sel.value = actual;
         }
 
         function render() {
             actualizarSelectorRutas();
             document.getElementById('lista-rutas-config').innerHTML = rutas.map((r,i) => `
                 <div class="card flex flex-col gap-2">
-                    <div class="flex justify-between font-bold text-blue-600"><span>${r.n}</span><button onclick="eliminarRutaCompleta(${i})" class="text-red-400"><i class="fas fa-trash-alt"></i></button></div>
+                    <div class="flex justify-between font-bold text-blue-600"><span>${r.n}</span><button onclick="rutas.splice(${i},1);save()" class="text-red-400"><i class="fas fa-trash-alt"></i></button></div>
                     <div class="flex items-center gap-3 text-xs">
-                        Alarma: <input type="number" value="${r.alarm}" onchange="rutas[${i}].alarm=this.value;save()" class="w-12 border rounded px-1 text-center font-bold"> min
+                        Alarma: <input type="number" value="${r.alarm}" onchange="rutas[${i}].alarm=this.value;save()" class="w-12 border rounded text-center font-bold"> min
                         <button onclick="rutas[${i}].on=!rutas[${i}].on;save()" class="ml-auto text-lg ${r.on?'text-blue-500':'text-gray-300'}"><i class="fas ${r.on?'fa-bell':'fa-bell-slash'}"></i></button>
                     </div>
                 </div>
@@ -279,11 +221,11 @@
                             <span class="cronos font-mono text-3xl font-black" data-last="${last?last.time:''}" data-alarm="${r.alarm}" data-on="${r.on}">--:--</span>
                         </div>
                         <div class="flex gap-2">
-                            <input id="unit-${i}" type="number" placeholder="ID" class="w-20 p-3 rounded-xl text-sm font-bold">
+                            <input id="unit-${i}" type="number" placeholder="ID" class="w-20 p-3 rounded-xl font-bold">
                             <select id="tipo-${i}" class="flex-1 p-3 rounded-xl text-xs font-bold">
-                                <option>Combi</option> <option>Camión</option>
+                                <option>Combi</option><option>Camión</option>
                             </select>
-                            <button onclick="regPase(${i})" class="bg-blue-600 text-white px-6 rounded-xl font-bold shadow-lg">OK</button>
+                            <button onclick="regPase(${i})" class="bg-blue-600 text-white px-6 rounded-xl font-bold">OK</button>
                         </div>
                     </div>
                 `;
@@ -294,24 +236,15 @@
         function renderReportes() {
             const fecha = document.getElementById('calendar-filter').value;
             const rutaSel = document.getElementById('ruta-filter').value;
-            const regsGlobal = historial[fecha] || [];
-            const regsFiltrados = regsGlobal.map((r, i) => ({ ...r, originalIdx: i })).filter(r => r.ruta === rutaSel);
-            let h = '';
-            if (regsFiltrados.length > 0) {
-                h += `<div class="mb-4 text-center"><h3 class="font-black text-blue-600 text-[10px] uppercase tracking-[3px]">${rutaSel}</h3></div>`;
-                regsFiltrados.slice().reverse().forEach((r) => {
-                    const idxEnFiltrados = regsFiltrados.indexOf(r);
-                    const ant = regsFiltrados[idxEnFiltrados - 1];
-                    let freq = ant ? Math.floor((r.time - ant.time)/60000) + "m" : "Ini";
-                    h += `<div class="card p-4 flex justify-between items-center text-[11px]">
-                        <div><span class="font-black text-blue-600 text-sm">#${r.unidad}</span> 
-                        <span class="mx-2 opacity-20">|</span> <b>${new Date(r.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</b>
-                        <div class="mt-1 opacity-50 font-bold uppercase text-[9px]">Freq: ${freq} | ${r.tipo}</div></div>
-                        <button onclick="undo(${r.originalIdx})" class="text-gray-300 p-2"><i class="fas fa-undo-alt"></i></button>
-                    </div>`;
-                });
-            }
-            document.getElementById('lista-reportes').innerHTML = h || `<p class='text-center opacity-30 mt-20 text-[10px] font-bold'>SIN DATOS</p>`;
+            const regs = (historial[fecha] || []).filter(r => r.ruta === rutaSel);
+            let h = regs.length > 0 ? `<div class="mb-4 text-center font-black text-blue-600 text-xs">${rutaSel}</div>` : '';
+            regs.slice().reverse().forEach((r, idx) => {
+                h += `<div class="card p-4 flex justify-between items-center text-[11px]">
+                    <div><span class="font-black text-blue-600 text-sm">#${r.unidad}</span> | <b>${new Date(r.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</b></div>
+                    <div class="opacity-50 font-bold">${r.tipo}</div>
+                </div>`;
+            });
+            document.getElementById('lista-reportes').innerHTML = h || `<p class='text-center opacity-30 mt-20 text-xs font-bold'>SIN DATOS</p>`;
         }
 
         function tick() {
@@ -327,37 +260,21 @@
             setTimeout(tick, 1000);
         }
 
-        function save() {
-            localStorage.setItem('rutas_v41', JSON.stringify(rutas));
-            localStorage.setItem('historial_v41', JSON.stringify(historial));
-            render();
-        }
-
         function addRuta() {
             let n = document.getElementById('input-ruta').value;
-            if(n) { 
-                rutas.push({n: n.toUpperCase(), alarm: 15, on: true}); 
-                save(); document.getElementById('input-ruta').value=''; actualizarSelectorRutas();
-            }
+            if(n) { rutas.push({n: n.toUpperCase(), alarm: 15, on: true}); save(); document.getElementById('input-ruta').value=''; }
         }
 
-        function copyWA() {
-            let t = `*REPORTE LOGÍSTICA ${document.getElementById('calendar-filter').value}*\n\n`;
-            rutas.forEach(ruta => {
-                const regsRuta = (historial[document.getElementById('calendar-filter').value] || []).filter(r => r.ruta === ruta.n);
-                if(regsRuta.length > 0) {
-                    t += `*[${ruta.n}]*\n`;
-                    regsRuta.forEach(r => t += `• #${r.unidad} - ${new Date(r.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} (${r.tipo})\n`);
-                    t += `\n`;
-                }
-            });
-            navigator.clipboard.writeText(t); alert("Copiado");
+        function actualizarSelectorRutas() {
+            const sel = document.getElementById('ruta-filter');
+            const actual = sel.value;
+            sel.innerHTML = rutas.map(r => `<option value="${r.n}">${r.n}</option>`).join('');
+            if (actual) sel.value = actual;
         }
 
         let startX = 0;
         document.addEventListener('touchstart', e => startX = e.touches[0].clientX);
         document.addEventListener('touchend', e => {
-            activarAudioSilent();
             let diff = startX - e.changedTouches[0].clientX;
             if(Math.abs(diff) > 80) {
                 if(diff > 0 && tabActual < 5) go(tabActual+1);
